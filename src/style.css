@@ -1,4 +1,6 @@
 :root {
+	--background-svg: url('panels.svg');
+
 	--primary-outline-size: 0.5em;
 	--primary-border-size: 0.5em;
 
@@ -16,7 +18,8 @@
 	--lcd-pixel-color: #111111;
 
 	--background-color: #0a0a0a;
-	--foreground-color: #1d1d1d;
+	--middle-ground-color: #1d1d1d;
+	--foreground-color: #acacac;
 
 	--primary-text-color: #eee;
 	--secondary-text-color: #acacac;
@@ -53,7 +56,7 @@
 
 body {
 	font-family: monospace;
-	background: url('noise.svg') center;
+	background: var(--background-svg) center;
 	background-color: var(--background-color);
 	color: var(--primary-text-color);
 	margin: 0;
@@ -61,9 +64,12 @@ body {
 }
 
 footer {
-	margin-left: 1em;
-	margin-bottom: 1em;
-	z-index: 9999;
+	margin: auto;
+	margin-top: 5em;
+	margin-bottom: 5em;
+	min-width: 25em;
+	max-width: 50em;
+	text-align: center;
 }
 
 h1 {
@@ -72,6 +78,7 @@ h1 {
 	margin-right: 2.5%;
 	margin-left: 2.5%;
 	text-align: center;
+	word-wrap: break-word;
 	font-weight: bolder;
 	font-size: 350%;
 	user-select: none;
@@ -89,7 +96,7 @@ div .box-form {
 	margin: auto;
 	margin-top: 5em;
 	margin-bottom: 5em;
-	min-width: 25em;
+	min-width: 15em;
 	max-width: 50em;
 }
 
