@@ -29,11 +29,11 @@
 	--primary-bordline-color: #eee;
 	--secondary-bordline-color: #acacac;
 
-	--interaction-text-color: #005fac;
+	--communication-text-color: #005fac;
 	--security-text-color: #ac0000;
 	--configuration-text-color: #aca900;
 
-	--interaction-bordline-color: #005fac;
+	--communication-bordline-color: #005fac;
 	--security-bordline-color: #ac0000;
 	--configuration-bordline-color: #aca900;
 
@@ -77,11 +77,13 @@ footer {
 	max-width: 50em;
 	font-weight: normal;
 	text-align: center;
+	user-select: none;
 }
 
 a {
 	color: var(--secondary-text-color);
 	text-decoration: none;
+	user-select: none;
 	transition: all 0.1s ease-in-out;
 }
 
@@ -114,17 +116,15 @@ div .category {
 	margin: auto;
 	margin-bottom: 5em;
 	width: 95%;
-	min-width: 25em;
-	max-width: 45em;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 }
 
-.category[type="interaction"] {
-	border-color: var(--interaction-bordline-color);
-	color: var(--interaction-text-color);
+.category[type="communication"] {
+	border-color: var(--communication-bordline-color);
+	color: var(--communication-text-color);
 }
 
 .category[type="security"] {
@@ -157,18 +157,20 @@ div .category-container {
 	display: flex;
 	min-height: 2.5vh;
 	width: 100%;
+	max-width: 55em;
 	flex-direction: column;
 	flex-grow: 1;
+	align-items: center;
 	justify-content: center;
 }
 
 div .box-form {
 	border: var(--primary-bordline-size) double var(--primary-bordline-color);
 	border-radius: 0.5em;
-	margin: 2.5vh;
 	overflow: hidden;
-	min-width: 25em;
-	max-width: 50em;
+	/* Make it so it doesn't clip the bordline */
+	width: calc(100% - (var(--primary-bordline-size) * 2));
+	margin-inline: 1vh;
 }
 
 div .box-form-header {
@@ -204,9 +206,13 @@ div .box-form-container {
 }
 
 .form-buttons {
-	justify-content: space-evenly;
+	display: flex;
+	justify-content: space-around;
 	align-items: center;
-	margin: 2vh 45%;
+	flex-direction: row;
+	flex-flow: wrap;
+	gap: 1.125em;
+	margin: auto;
 }
 
 .form-select {
@@ -270,23 +276,20 @@ select:hover {
 }
 
 .box-form input[type="submit"],
-.box-form input[type="reset"],
+.box-form input[type="clear"],
 .box-form button {
 	font: inherit;
 	font-weight: normal;
 	font-size: normal;
 	text-align: center;
 	display: inline;
-	padding: 0.5em 1.5em;
-	margin-right: 0.5em;
-	margin-left: 0.5em;
+	padding: 0.5em 1.75em;
 	border-radius: 0.5em;
 	background: none;
 	background-color: var(--button-background-color);
 	color: var(--primary-text-color);
 	border: var(--secondary-bordline-size) solid var(--primary-bordline-color);
 	cursor: pointer;
-	display: flex;
 	user-select: none;
 	transition: all 0.1s ease-in-out;
 }

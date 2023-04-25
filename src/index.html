@@ -11,8 +11,8 @@
 <body>
 	<h1>Purrfect Forecast</h1>
 	<div class="container">
-		<div class="category" type="interaction">
-			<span class="category-header">Interaction</span>
+		<div class="category" type="communication">
+			<span class="category-header">Communication</span>
 			<div class="category-container">
 				<div class="box-form">
 					<div class="box-form-header">Status</div>
@@ -26,12 +26,27 @@
 							<div class="form-value"><span id="signal-strength">70 dBm</span></div>
 						</div>
 						<div class="form-item">
+							<div class="form-label">Ping</div>
+							<div class="form-value"><span id="ping">12 ms</span></div>
+						</div>
+						<div class="form-item">
 							<div class="form-label">Battery Level</div>
 							<div class="form-value"><span id="battery-level">69 %</span></div>
 						</div>
 						<div class="form-item">
 							<div class="form-label">API</div>
-							<div class="form-value"><span id="battery-level">Online</span></div>
+							<div class="form-value"><span id="api">Online</span></div>
+						</div>
+					</div>
+				</div>
+
+				<div class="box-form">
+					<div class="box-form-header">Interaction</div>
+					<div class="box-form-container">
+						<div class="form-buttons">
+							<button type="wipe-eeprom-button">Wipe EEPROM</button>
+							<button type="ping-button">Ping</button>
+							<button id="reboot-button">Reboot</button>
 						</div>
 					</div>
 				</div>
@@ -69,7 +84,7 @@
 			<span class="category-header">Security</span>
 			<div class="category-container">
 				<div class="box-form">
-					<span class="box-form-header">WiFi Credentials</span>
+					<span class="box-form-header">WiFi</span>
 					<div class="box-form-container">
 						<div class="form-item">
 							<div for="ssid-input" class="form-label">SSID</div>
@@ -80,22 +95,22 @@
 							<input type="password" id="password-input" name="password" maxlength="64" required>
 						</div>
 						<div class="form-buttons">
-							<button type="submit">Save</button>
-							<button type="reset">Cancel</button>
+							<button type="submit">Submit</button>
+							<button type="reset">Clear</button>
 						</div>
 					</div>
 				</div>
 
 				<div class="box-form">
-					<span class="box-form-header">Panel Credentials</span>
+					<span class="box-form-header">Panel</span>
 					<div class="box-form-container">
 						<div class="form-item">
 							<div for="password-input" class="form-label">Passsword</div>
 							<input type="password" id="password-input" name="auth-password" maxlength="16" required>
 						</div>
 						<div class="form-buttons">
-							<button type="submit">Save</button>
-							<button type="reset">Cancel</button>
+							<button type="submit">Submit</button>
+							<button type="reset">Clear</button>
 						</div>
 					</div>
 				</div>
