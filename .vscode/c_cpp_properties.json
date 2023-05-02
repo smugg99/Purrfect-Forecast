@@ -10,6 +10,7 @@
             "includePath": [
                 "/home/karol/Documents/GitHub/Purrfect-Forecast/include",
                 "/home/karol/Documents/GitHub/Purrfect-Forecast/src",
+                "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPClient/src",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
                 "/home/karol/Documents/GitHub/Purrfect-Forecast/.pio/libdeps/esp12e/ArduinoJson/src",
                 "/home/karol/Documents/GitHub/Purrfect-Forecast/.pio/libdeps/esp12e/TaskScheduler/src",
@@ -22,7 +23,6 @@
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266AVRISP/src",
-                "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPClient/src",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPUpdateServer/src",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266LLMNR",
                 "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266NetBIOS",
@@ -59,6 +59,7 @@
                 "path": [
                     "/home/karol/Documents/GitHub/Purrfect-Forecast/include",
                     "/home/karol/Documents/GitHub/Purrfect-Forecast/src",
+                    "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPClient/src",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
                     "/home/karol/Documents/GitHub/Purrfect-Forecast/.pio/libdeps/esp12e/ArduinoJson/src",
                     "/home/karol/Documents/GitHub/Purrfect-Forecast/.pio/libdeps/esp12e/TaskScheduler/src",
@@ -71,7 +72,6 @@
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266AVRISP/src",
-                    "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPClient/src",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266HTTPUpdateServer/src",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266LLMNR",
                     "/home/karol/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266NetBIOS",

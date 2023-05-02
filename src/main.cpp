@@ -14,9 +14,13 @@ WeatherData weatherData;
 //	Task Declarations
 //==============================================================
 
-void fetchWeatherDataTask();
+void _fetchWeatherData();
+void _updateDisplay();
 
-Task weatherTask(10000, TASK_FOREVER, &fetchWeatherDataTask);
+Task fetchWeatherDataTask(10000, TASK_FOREVER, &_fetchWeatherData);
+Task updateDisplayTask(12000, TASK_FOREVER, &_updateDisplay);
+
+Task* startupTasks[] = { &fetchWeatherDataTask, &updateDisplayTask };
 
 //==============================================================
 //	Task Declarations
@@ -26,19 +30,26 @@ Task weatherTask(10000, TASK_FOREVER, &fetchWeatherDataTask);
 //	Functions
 //==============================================================
 
-void connectToWiFi() {
-	Serial.print("\nConnecting to: ");
-	Serial.println(DEFAULT_WIFI_SSID);
+template <typename T>
+void debugPrint(T const& value, bool nl = true) {
+	if (!DEBUG) { return; }
+	if (nl) { Serial.println(value); }
+	else { Serial.print(value); }
+}
 
-	Serial.println("Waiting for connection...");
+void connectToWiFi() {
+	debugPrint("\nConnecting to: ");
+	debugPrint(DEFAULT_WIFI_SSID, false);
+
+	debugPrint("Waiting for connection...");
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(100);
 		Serial.print(".");
 	};
 
-	Serial.println("\nConnected!");
-	Serial.println(WiFi.localIP());
-	Serial.println(WiFi.macAddress());
+	debugPrint("Connected!");
+	debugPrint(WiFi.localIP());
+	debugPrint(WiFi.macAddress());
 }
 
 void setup() {
@@ -50,9 +61,11 @@ void setup() {
 	connectToWiFi();
 
 	runner.init();
-	runner.addTask(weatherTask);
 
-	weatherTask.enable();
+	for (uint8_t i = 0; i < sizeof(startupTasks) / sizeof(Task*); i++) {
+		runner.addTask(*startupTasks[i]);
+		startupTasks[i]->enable();
+	}
 }
 
 void loop() {
@@ -70,9 +83,11 @@ void loop() {
 //	Task Functions
 //==============================================================
 
-void fetchWeatherDataTask() {
+void _fetchWeatherData() {
+	debugPrint("Fetching weather data...");
+
 	if (WiFi.status() != WL_CONNECTED) {
-		Serial.println("Connection lost!");
+		debugPrint("Connection lost! Trying to reconnect...");
 		connectToWiFi();
 	}
 
@@ -86,9 +101,13 @@ void fetchWeatherDataTask() {
 	}
 
 	String payload = http.getString();
-	Serial.println(payload);
+	debugPrint(payload);
 
 	http.end();
+}
+
+void _updateDisplay() {
+	debugPrint("Updating display...");
 }
 
 //==============================================================
