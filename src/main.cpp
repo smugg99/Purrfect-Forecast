@@ -3,8 +3,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-#include <TaskScheduler.h>
-
 #include <DHTesp.h>
 #include <SPI.h>
 
@@ -12,7 +10,6 @@
 #include "station.h"
 #include "display.h" // for example Waveshare 2.9" E-paper display (12956)
 
-Scheduler runner;
 WiFiClient client;
 HTTPClient http;
 WeatherData weatherData;
@@ -20,25 +17,6 @@ WeatherData weatherData;
 DHTesp dht;
 
 const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-//==============================================================
-//	Task Declarations
-//==============================================================
-
-void _fetchData();
-void _sampleDHT();
-void _updateDisplay();
-void _bootTone();
-
-Task fetchDataTask(FETCH_DATA_INTERVAL, TASK_FOREVER, &_fetchData);
-Task sampleDHTTask(SAMPLE_DHT_INTERVAL, TASK_FOREVER, &_sampleDHT);
-Task updateDisplayTask(UPDATE_INTERVAL, TASK_FOREVER, &_updateDisplay);
-
-Task* startupTasks[] = { &fetchDataTask, &sampleDHTTask, &updateDisplayTask };
-
-//==============================================================
-//	Task Declarations
-//==============================================================
 
 //==============================================================
 //	Functions
@@ -62,7 +40,7 @@ String generatePassword(uint8_t length) {
 	return password;
 }
 
-bool _waitForConnection() {
+bool _waitForWiFiConnection() {
 	debugPrint("Waiting for connection...");
 
 	uint8_t retries = 0;
@@ -89,7 +67,7 @@ bool _waitForConnection() {
 	return (WiFi.status() != WL_CONNECTED) ? false : true;
 }
 
-void launchAP() {
+void launchAccessPoint() {
 	WiFi.mode(WIFI_AP);
 
 	String _password = generatePassword(AP_PASSWORD_LENGTH);
@@ -97,12 +75,16 @@ void launchAP() {
 
 	WiFi.softAP(_ssid, _password);
 
+	String _APIP = WiFi.softAPIP().toString();
+
 	debugPrint("\nAP SSID: ");
 	debugPrint(_ssid);
 	debugPrint("AP Password: ");
 	debugPrint(_password);
 	debugPrint("AP IP: ");
-	debugPrint(WiFi.softAPIP());
+	debugPrint(_APIP);
+
+	displayAccessPointScreen(_ssid, _password, _APIP);
 }
 
 void connectToWiFi() {
@@ -112,17 +94,35 @@ void connectToWiFi() {
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(DEFAULT_WIFI_SSID, DEFAULT_WIFI_PASSWORD);
 
-	bool _success = _waitForConnection();
-
-	if (_success) {
+	if (_waitForWiFiConnection()) {
 		debugPrint("Connected successfully!");
 		debugPrint(WiFi.localIP());
 		debugPrint(WiFi.macAddress());
 	}
 	else {
 		debugPrint("Connection failed! Launching AP...");
-		launchAP();
+		launchAccessPoint();
 	}
+}
+
+void ICACHE_RAM_ATTR wakeUp() {
+	wifi_set_sleep_type(NONE_SLEEP_T);
+
+	displayPrimaryScreen();
+	delay(FIXED_DELAY);
+
+	debugPrint("Waking up!");
+
+	ESP.deepSleep(SLEEP_DURATION);
+}
+
+void goToSleep() {
+	debugPrint("Going to sleep!");
+
+	// Idk why but this shit beeps when going to sleep...
+	digitalWrite(BUZZER_PIN, LOW);
+
+	ESP.deepSleep(SLEEP_DURATION);
 }
 
 void setup() {
@@ -136,34 +136,24 @@ void setup() {
 		Serial.begin(BAUD_RATE);
 	}
 
-	delay(1000);
-
 	digitalWrite(BUZZER_PIN, HIGH);
-	delay(200);
+	delay(20);
 	digitalWrite(BUZZER_PIN, LOW);
-	delay(500);
+	delay(50);
 	digitalWrite(BUZZER_PIN, HIGH);
-	delay(500);
+	delay(50);
 	digitalWrite(BUZZER_PIN, LOW);
 
 	dht.setup(DHT_DATA_PIN, DHTesp::DHT11);
-	_setup();
 
+	setupDisplay();
 	connectToWiFi();
 
-	runner.init();
-
-	for (uint8_t i = 0; i < sizeof(startupTasks) / sizeof(Task*); i++) {
-		runner.addTask(*startupTasks[i]);
-		startupTasks[i]->enable();
-	}
+	goToSleep();
 }
 
 void loop() {
-	runner.execute();
 
-	delay(FIXED_DELAY);
-	yield();
 }
 
 //==============================================================
@@ -202,21 +192,17 @@ void _fetchData() {
 void _sampleDHT() {
 	float _humidity = dht.getHumidity();
 	float _temperature = dht.getTemperature();
-	float _abosuluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
+	float _absoluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
 	float _dewPoint = dht.computeDewPoint(_temperature, _humidity);
 
 	debugPrint("Humidity: "); debugPrint(_humidity, false);
 	debugPrint("Temperature: "); debugPrint(_temperature, false);
-	debugPrint("Absoulute humidity: "); debugPrint(_abosuluteHumidity, false);
+	debugPrint("Absoulute humidity: "); debugPrint(_absoluteHumidity, false);
 	debugPrint("Dew point: "); debugPrint(_dewPoint, false);
 
 	weatherData.setInsideParameters(Station::InsideParameters {
-		_temperature, _humidity, _dewPoint, _abosuluteHumidity
+		_temperature, _humidity, _dewPoint, _absoluteHumidity
 	});
-}
-
-void _updateDisplay() {
-	debugPrint("Updating display...");
 }
 
 //==============================================================

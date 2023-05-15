@@ -32,9 +32,9 @@
 #define DEBUG true
 
 #define FIXED_DELAY 1000
-#define FETCH_DATA_INTERVAL 5000
-#define SAMPLE_DHT_INTERVAL 2000
-#define UPDATE_INTERVAL 1000
+
+// It's in MICRO seconds!
+#define SLEEP_DURATION 5000000
 
 #define AP_SSID_LENGTH 18
 #define AP_PASSWORD_LENGTH 8
@@ -47,10 +47,15 @@
 
 #define SPLASH_SCREEN_TITLE "Purrfect Forecast"
 #define SPLASH_SCREEN_FOOTER "Made by Karol Duda"
+#define SPLASH_DURATION 1500
+
 #define HARDWARE_VERSION = "V1.0"
 #define SOFTWARE_VERSION = "V0.1"
 
 #define DISPLAY_ROTATION 3  // Rotate the display 180* because I am retarded and designed the case in the wrong way
+
+#define FOOTER_OFFSET_X 0
+#define FOOTER_OFFSET_Y 25
 
 //==============================================================
 //	Defaults
