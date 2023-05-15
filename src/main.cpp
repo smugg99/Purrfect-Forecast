@@ -1,26 +1,40 @@
+#include <Arduino.h>
+
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+
 #include <TaskScheduler.h>
 
-#include "WeatherData.h"
+#include <DHTesp.h>
+#include <SPI.h>
+
 #include "config.h"
+#include "station.h"
+#include "display.h" // for example Waveshare 2.9" E-paper display (12956)
 
 Scheduler runner;
 WiFiClient client;
 HTTPClient http;
 WeatherData weatherData;
 
+DHTesp dht;
+
+const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
 //==============================================================
 //	Task Declarations
 //==============================================================
 
-void _fetchWeatherData();
+void _fetchData();
+void _sampleDHT();
 void _updateDisplay();
+void _bootTone();
 
-Task fetchWeatherDataTask(10000, TASK_FOREVER, &_fetchWeatherData);
-Task updateDisplayTask(12000, TASK_FOREVER, &_updateDisplay);
+Task fetchDataTask(FETCH_DATA_INTERVAL, TASK_FOREVER, &_fetchData);
+Task sampleDHTTask(SAMPLE_DHT_INTERVAL, TASK_FOREVER, &_sampleDHT);
+Task updateDisplayTask(UPDATE_INTERVAL, TASK_FOREVER, &_updateDisplay);
 
-Task* startupTasks[] = { &fetchWeatherDataTask, &updateDisplayTask };
+Task* startupTasks[] = { &fetchDataTask, &sampleDHTTask, &updateDisplayTask };
 
 //==============================================================
 //	Task Declarations
@@ -37,26 +51,103 @@ void debugPrint(T const& value, bool nl = true) {
 	else { Serial.print(value); }
 }
 
-void connectToWiFi() {
-	debugPrint("\nConnecting to: ");
-	debugPrint(DEFAULT_WIFI_SSID, false);
+String generatePassword(uint8_t length) {
+	String password;
 
-	debugPrint("Waiting for connection...");
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(100);
-		Serial.print(".");
-	};
+	for (int i = 0; i < length; ++i) {
+		int randomIndex = random(PASSWORD_CHARS.length());
+		password += PASSWORD_CHARS[randomIndex];
+	}
 
-	debugPrint("Connected!");
-	debugPrint(WiFi.localIP());
-	debugPrint(WiFi.macAddress());
+	return password;
 }
 
-void setup() {
-	Serial.begin(BAUD_RATE);
+bool _waitForConnection() {
+	debugPrint("Waiting for connection...");
+
+	uint8_t retries = 0;
+	bool buzzerState = false;
+
+	while (WiFi.status() != WL_CONNECTED) {
+		if (retries >= CONNECTION_MAX_RETRIES) {
+			debugPrint("Max retries reached!");
+			break;
+		}
+
+		delay(CONNECTION_DELAY / 2);
+
+		debugPrint("Retrying: " + String(retries));
+
+		digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+		buzzerState = buzzerState ? false : true;
+
+		delay(CONNECTION_DELAY / 2);
+
+		retries++;
+	};
+
+	return (WiFi.status() != WL_CONNECTED) ? false : true;
+}
+
+void launchAP() {
+	WiFi.mode(WIFI_AP);
+
+	String _password = generatePassword(AP_PASSWORD_LENGTH);
+	String _ssid = "ESP-%06X" + ESP.getChipId();
+
+	WiFi.softAP(_ssid, _password);
+
+	debugPrint("\nAP SSID: ");
+	debugPrint(_ssid);
+	debugPrint("AP Password: ");
+	debugPrint(_password);
+	debugPrint("AP IP: ");
+	debugPrint(WiFi.softAPIP());
+}
+
+void connectToWiFi() {
+	debugPrint("\nConnecting to: ");
+	debugPrint(DEFAULT_WIFI_SSID);
 
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(DEFAULT_WIFI_SSID, DEFAULT_WIFI_PASSWORD);
+
+	bool _success = _waitForConnection();
+
+	if (_success) {
+		debugPrint("Connected successfully!");
+		debugPrint(WiFi.localIP());
+		debugPrint(WiFi.macAddress());
+	}
+	else {
+		debugPrint("Connection failed! Launching AP...");
+		launchAP();
+	}
+}
+
+void setup() {
+	pinMode(ADC_PIN, INPUT);
+	pinMode(BUTTON_PIN, INPUT);
+	pinMode(BUZZER_PIN, OUTPUT);
+
+	digitalWrite(BUZZER_PIN, LOW);
+
+	if (DEBUG) {
+		Serial.begin(BAUD_RATE);
+	}
+
+	delay(1000);
+
+	digitalWrite(BUZZER_PIN, HIGH);
+	delay(200);
+	digitalWrite(BUZZER_PIN, LOW);
+	delay(500);
+	digitalWrite(BUZZER_PIN, HIGH);
+	delay(500);
+	digitalWrite(BUZZER_PIN, LOW);
+
+	dht.setup(DHT_DATA_PIN, DHTesp::DHT11);
+	_setup();
 
 	connectToWiFi();
 
@@ -71,7 +162,7 @@ void setup() {
 void loop() {
 	runner.execute();
 
-	delay(5000);
+	delay(FIXED_DELAY);
 	yield();
 }
 
@@ -83,7 +174,7 @@ void loop() {
 //	Task Functions
 //==============================================================
 
-void _fetchWeatherData() {
+void _fetchData() {
 	debugPrint("Fetching weather data...");
 
 	if (WiFi.status() != WL_CONNECTED) {
@@ -103,7 +194,25 @@ void _fetchWeatherData() {
 	String payload = http.getString();
 	debugPrint(payload);
 
+	//update the weather data object here after sucessfully parsing json etc
+
 	http.end();
+}
+
+void _sampleDHT() {
+	float _humidity = dht.getHumidity();
+	float _temperature = dht.getTemperature();
+	float _abosuluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
+	float _dewPoint = dht.computeDewPoint(_temperature, _humidity);
+
+	debugPrint("Humidity: "); debugPrint(_humidity, false);
+	debugPrint("Temperature: "); debugPrint(_temperature, false);
+	debugPrint("Absoulute humidity: "); debugPrint(_abosuluteHumidity, false);
+	debugPrint("Dew point: "); debugPrint(_dewPoint, false);
+
+	weatherData.setInsideParameters(Station::InsideParameters {
+		_temperature, _humidity, _dewPoint, _abosuluteHumidity
+	});
 }
 
 void _updateDisplay() {
