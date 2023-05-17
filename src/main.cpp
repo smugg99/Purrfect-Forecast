@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
@@ -7,16 +8,27 @@
 #include <SPI.h>
 
 #include "config.h"
-#include "station.h"
+#include "data.h"
 #include "display.h" // for example Waveshare 2.9" E-paper display (12956)
+
+const int JSON_BUFFER_SIZE = 1024;  // Adjust the buffer size as per your JSON data size
+const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 WiFiClient client;
 HTTPClient http;
-WeatherData weatherData;
 
 DHTesp dht;
 
-const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+// In the future below settings will be stored in the EEPROM
+FetchDataUnits FETCH_DATA_UNITS = FetchDataUnits::METRIC;
+float LONGITUDE = DEFAULT_LONGITUDE;
+float LATITUDE = DEFAULT_LATITUTE;
+
+String WIFI_SSID = DEFAULT_WIFI_SSID;
+String WIFI_PASSWORD = DEFAULT_WIFI_PASSWORD;
+
+FetchedData lastCurrentWeatherData;
+FetchedData* lastWeatherForecastData;
 
 //==============================================================
 //	Functions
@@ -29,7 +41,7 @@ void debugPrint(T const& value, bool nl = true) {
 	else { Serial.print(value); }
 }
 
-String generatePassword(uint8_t length) {
+String generatePassword(uint8_t length = AP_PASSWORD_LENGTH) {
 	String password;
 
 	for (int i = 0; i < length; ++i) {
@@ -40,38 +52,89 @@ String generatePassword(uint8_t length) {
 	return password;
 }
 
-bool _waitForWiFiConnection() {
+String buildUrl(FetchDataType fetchDataType = FetchDataType::CURRENT_WEATHER) {
+	String url = API_ENDPOINT;
+	String secondaryUrl = "?lat=" + String(LATITUDE) + "&lon=" + String(LONGITUDE) + "&mode=json&units=";
+
+	switch (FETCH_DATA_UNITS) {
+	case FetchDataUnits::METRIC:
+		secondaryUrl.concat(API_METRIC_UNITS);
+		break;
+	case FetchDataUnits::IMPERIAL:
+		secondaryUrl.concat(API_IMPERIAL_UNITS);
+		break;
+	}
+
+	switch (fetchDataType) {
+	case FetchDataType::CURRENT_WEATHER:
+		url.concat(API_CURRENT_WEATHER);
+		break;
+	case FetchDataType::WEATHER_FORECAST:
+		url.concat(API_WEATHER_FORECAST);
+		secondaryUrl.concat("&cn=" + FORECAST_TIMESTAMPS_AMOUNT);
+		break;
+	}
+
+	// Compilator throws an error without explicitly stating the api key is a string...
+	secondaryUrl.concat("&appid=" + String(API_KEY));
+	url.concat(secondaryUrl);
+
+	debugPrint("Url built: ");
+	debugPrint(url);
+
+	return url;
+}
+
+GETResult simpleGET(String url) {
+	http.begin(client, url);
+
+	int _responseCode = http.GET();
+	String _payload = http.getString();
+
+	debugPrint(_payload);
+
+	http.end();
+
+	GETResult getResult;
+	getResult.payload = _payload;
+	getResult.responseCode = _responseCode;
+
+	if (getResult.responseCode != HTTP_CODE_OK) {
+		debugPrint("Http request error of code: ");
+		debugPrint(getResult.responseCode);
+
+		getResult.ok = false;
+	}
+
+	return getResult;
+}
+
+
+bool waitForWiFiConnection() {
 	debugPrint("Waiting for connection...");
 
 	uint8_t retries = 0;
-	bool buzzerState = false;
 
 	while (WiFi.status() != WL_CONNECTED) {
 		if (retries >= CONNECTION_MAX_RETRIES) {
 			debugPrint("Max retries reached!");
-			break;
+			return false;
 		}
 
-		delay(CONNECTION_DELAY / 2);
+		delay(CONNECTION_DELAY);
+		retries++;
 
 		debugPrint("Retrying: " + String(retries));
-
-		digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
-		buzzerState = buzzerState ? false : true;
-
-		delay(CONNECTION_DELAY / 2);
-
-		retries++;
 	};
 
-	return (WiFi.status() != WL_CONNECTED) ? false : true;
+	return true;
 }
 
 void launchAccessPoint() {
 	WiFi.mode(WIFI_AP);
 
-	String _password = generatePassword(AP_PASSWORD_LENGTH);
-	String _ssid = "ESP-%06X" + ESP.getChipId();
+	String _password = generatePassword();
+	String _ssid = "ESP-" + String(ESP.getChipId());
 
 	WiFi.softAP(_ssid, _password);
 
@@ -84,18 +147,18 @@ void launchAccessPoint() {
 	debugPrint("AP IP: ");
 	debugPrint(_APIP);
 
-	displayAccessPointScreen(_ssid, _password, _APIP);
+	//displayAccessPointScreen(_ssid, _password, _APIP);
 }
 
 void connectToWiFi() {
 	debugPrint("\nConnecting to: ");
-	debugPrint(DEFAULT_WIFI_SSID);
+	debugPrint(WIFI_SSID);
 
 	WiFi.mode(WIFI_STA);
-	WiFi.begin(DEFAULT_WIFI_SSID, DEFAULT_WIFI_PASSWORD);
+	WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-	if (_waitForWiFiConnection()) {
-		debugPrint("Connected successfully!");
+	if (waitForWiFiConnection()) {
+		debugPrint("Connection established!");
 		debugPrint(WiFi.localIP());
 		debugPrint(WiFi.macAddress());
 	}
@@ -104,6 +167,17 @@ void connectToWiFi() {
 		launchAccessPoint();
 	}
 }
+
+void checkWiFiConnection() {
+	if (WiFi.status() != WL_CONNECTED) {
+		debugPrint("Connection lost! Trying to reconnect...");
+		connectToWiFi();
+	}
+	else {
+		debugPrint("Connection ok!");
+	}
+}
+
 
 void ICACHE_RAM_ATTR wakeUp() {
 	wifi_set_sleep_type(NONE_SLEEP_T);
@@ -125,6 +199,72 @@ void goToSleep() {
 	ESP.deepSleep(SLEEP_DURATION);
 }
 
+
+FetchedData* _fetchWeatherForecast() {
+	debugPrint("Fetching weather forecast...");
+	checkWiFiConnection();
+
+	String currentWeatherUrl = buildUrl(FetchDataType::WEATHER_FORECAST);
+	GETResult getResult = simpleGET(currentWeatherUrl);
+
+	return lastWeatherForecastData;
+}
+
+FetchedData _fetchCurrentWeather() {
+	debugPrint("Fetching current weather...");
+	checkWiFiConnection();
+
+	String currentWeatherUrl = buildUrl(FetchDataType::CURRENT_WEATHER);
+	GETResult getResult = simpleGET(currentWeatherUrl);
+
+	if (!getResult.ok) {
+		debugPrint("Failed fetching current weather!");
+		return lastCurrentWeatherData;
+	}
+
+	DynamicJsonDocument document(JSON_BUFFER_SIZE);
+	deserializeJson(document, getResult.payload);
+
+	FetchedData fetchedCurrentWeatherData;
+	fetchedCurrentWeatherData.temperature = document["main"]["temp"];
+	fetchedCurrentWeatherData.feelsLikeTemperature = document["main"]["feels_like"];
+	fetchedCurrentWeatherData.humidity = document["main"]["humidity"];
+	fetchedCurrentWeatherData.pressure = document["main"]["pressure"];
+
+	debugPrint("FHumidity: "); debugPrint(fetchedCurrentWeatherData.humidity);
+	debugPrint("FTemperature: "); debugPrint(fetchedCurrentWeatherData.temperature);
+	debugPrint("FPressure: "); debugPrint(fetchedCurrentWeatherData.pressure);
+	debugPrint("FTemperature feels like: "); debugPrint(fetchedCurrentWeatherData.feelsLikeTemperature);
+
+	return fetchedCurrentWeatherData;
+}
+
+QuantifiedData _quantifyData() {
+	float _humidity = dht.getHumidity();
+	float _temperature = dht.getTemperature();
+	float _absoluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
+	float _dewPoint = dht.computeDewPoint(_temperature, _humidity);
+
+	debugPrint("Humidity: "); debugPrint(_humidity);
+	debugPrint("Temperature: "); debugPrint(_temperature);
+	debugPrint("Absoulute humidity: "); debugPrint(_absoluteHumidity);
+	debugPrint("Dew point: "); debugPrint(_dewPoint);
+
+	QuantifiedData quantifiedData;
+	quantifiedData.humidity = _humidity;
+	quantifiedData.temperature = _temperature;
+
+	return quantifiedData;
+}
+
+// Implement last quantified data etc. caching logic to handle http errors
+void handleData() {
+	FetchedData currentWeatherData = _fetchCurrentWeather();
+	FetchedData* weatherForecastData = _fetchWeatherForecast();
+	QuantifiedData quantifiedData = _quantifyData();
+}
+
+
 void setup() {
 	pinMode(ADC_PIN, INPUT);
 	pinMode(BUTTON_PIN, INPUT);
@@ -132,79 +272,32 @@ void setup() {
 
 	digitalWrite(BUZZER_PIN, LOW);
 
+	delay(FIXED_DELAY);
+
 	if (DEBUG) {
 		Serial.begin(BAUD_RATE);
-	}
 
-	digitalWrite(BUZZER_PIN, HIGH);
-	delay(20);
-	digitalWrite(BUZZER_PIN, LOW);
-	delay(50);
-	digitalWrite(BUZZER_PIN, HIGH);
-	delay(50);
-	digitalWrite(BUZZER_PIN, LOW);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(20);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(50);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(50);
+		digitalWrite(BUZZER_PIN, LOW);
+	}
 
 	dht.setup(DHT_DATA_PIN, DHTesp::DHT11);
 
-	setupDisplay();
+	//setupDisplay();
 	connectToWiFi();
+	handleData();
 
-	goToSleep();
+	//goToSleep();
 }
 
-void loop() {
-
-}
+// Not used because the ESP wakes itself repeatedly
+void loop() {}
 
 //==============================================================
 //	Functions
-//==============================================================
-
-//==============================================================
-//	Task Functions
-//==============================================================
-
-void _fetchData() {
-	debugPrint("Fetching weather data...");
-
-	if (WiFi.status() != WL_CONNECTED) {
-		debugPrint("Connection lost! Trying to reconnect...");
-		connectToWiFi();
-	}
-
-	http.begin(client, "http://api.openweathermap.org/data/2.5/weather?q=Bogusza&appid=" + String(API_KEY) + "&mode=json&units=metric&cnt=2");
-
-	int httpResponseCode = http.GET();
-
-	if (httpResponseCode <= 0) {
-		Serial.println("Http request error of code: ");
-		Serial.print(httpResponseCode);
-	}
-
-	String payload = http.getString();
-	debugPrint(payload);
-
-	//update the weather data object here after sucessfully parsing json etc
-
-	http.end();
-}
-
-void _sampleDHT() {
-	float _humidity = dht.getHumidity();
-	float _temperature = dht.getTemperature();
-	float _absoluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
-	float _dewPoint = dht.computeDewPoint(_temperature, _humidity);
-
-	debugPrint("Humidity: "); debugPrint(_humidity, false);
-	debugPrint("Temperature: "); debugPrint(_temperature, false);
-	debugPrint("Absoulute humidity: "); debugPrint(_absoluteHumidity, false);
-	debugPrint("Dew point: "); debugPrint(_dewPoint, false);
-
-	weatherData.setInsideParameters(Station::InsideParameters {
-		_temperature, _humidity, _dewPoint, _absoluteHumidity
-	});
-}
-
-//==============================================================
-//	Task Functions
 //==============================================================

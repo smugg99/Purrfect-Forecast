@@ -7,12 +7,16 @@
 //	API
 //==============================================================
 
+// Insert api key here
 #define API_KEY _API_KEY
 #define API_ENDPOINT "http://api.openweathermap.org/data/2.5/"
 
 #define API_CURRENT_WEATHER "weather"
-#define API_FORECAST "forecast"
-#define API_AIR_POLLUTION "air_pollution"
+#define API_WEATHER_FORECAST "forecast"
+//#define API_AIR_POLLUTION "air_pollution"
+
+#define API_METRIC_UNITS "metric"
+#define API_IMPERIAL_UNITS "imperial"
 
 //==============================================================
 //	API
@@ -23,10 +27,13 @@
 //==============================================================
 
 #define DEFAULT_WIFI_SSID "Funbox6-420D"
-#define DEFAULT_WIFI_PASSWORD "Wysowianka11"
+#define DEFAULT_WIFI_PASSWORD "Wysowianka1"
 
-#define DEFAULT_LONGITUDE 49.5693
-#define DEFAULT_LATITUTE 20.8849
+#define DEFAULT_LATITUTE 49.5693
+#define DEFAULT_LONGITUDE 20.8849
+
+#define FORECAST_TIMESTAMPS_AMOUNT 3
+#define FORECAST_DAYS_AMOUNT 5
 
 #define BAUD_RATE 115200
 #define DEBUG true
@@ -39,8 +46,8 @@
 #define AP_SSID_LENGTH 18
 #define AP_PASSWORD_LENGTH 8
 
-#define CONNECTION_MAX_RETRIES 10
-#define CONNECTION_DELAY 500
+#define CONNECTION_MAX_RETRIES 20
+#define CONNECTION_DELAY 2000
 
 #define MAX_BATTERY_VOLTAGE 4.2
 #define MIN_BATTERY_VOLTAGE 2.9
