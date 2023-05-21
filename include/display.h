@@ -28,6 +28,8 @@ enum DISPLAY_POINT {
 //==============================================================
 
 void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_POINT::CENTER, uint16_t offsetX = 0, uint16_t offsetY = 0) {
+	if (DISABLE_DISPLAY) { return; }
+
 	int16_t tbx, tby;
 	uint16_t tbw, tbh;
 
@@ -108,71 +110,11 @@ void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_PO
 	display.println(text);
 }
 
-void displayBootSplash() {
-	do {
-		display.fillScreen(GxEPD_WHITE);
-		printPointedText(SPLASH_SCREEN_TITLE);
-
-		display.setFont(&FreeMono9pt7b);
-
-		printPointedText("BC", DISPLAY_POINT::BOTTOM_CENTER);
-		printPointedText("BR", DISPLAY_POINT::BOTTOM_RIGHT);
-		printPointedText("RC", DISPLAY_POINT::RIGHT_CENTER);
-		printPointedText("TR", DISPLAY_POINT::TOP_RIGHT);
-		printPointedText("TC", DISPLAY_POINT::TOP_CENTER);
-		printPointedText("TL", DISPLAY_POINT::TOP_LEFT);
-		printPointedText("LC", DISPLAY_POINT::LEFT_CENTER);
-		printPointedText("BL", DISPLAY_POINT::BOTTOM_LEFT);
-
-		printPointedText(SPLASH_SCREEN_FOOTER, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, FOOTER_OFFSET_Y);
-	} while (display.nextPage());
-
-	display.hibernate();
-}
-
-void displayAccessPointScreen(String ssid, String password, String APIP) {
-	do {
-		display.fillScreen(GxEPD_WHITE);
-		printPointedText("No WiFi!");
-
-		display.setFont(&FreeMono9pt7b);
-		display.setTextWrap(true);
-
-		printPointedText(ssid + "\n" + password + "\n" + APIP, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, FOOTER_OFFSET_Y);
-	} while (display.nextPage());
-
-	// Go back to defaults
-	display.setTextWrap(false);
-	display.hibernate();
-}
-
-void displayPrimaryScreen() {
-	do {
-		display.fillScreen(GxEPD_WHITE);
-		printPointedText("[Primary Screen]");
-
-		display.setFont(&FreeMono9pt7b);
-
-		printPointedText("1", DISPLAY_POINT::BOTTOM_CENTER);
-		printPointedText("2", DISPLAY_POINT::BOTTOM_RIGHT);
-		printPointedText("3", DISPLAY_POINT::RIGHT_CENTER);
-		printPointedText("4", DISPLAY_POINT::TOP_RIGHT);
-		printPointedText("5", DISPLAY_POINT::TOP_CENTER);
-		printPointedText("6", DISPLAY_POINT::TOP_LEFT);
-		printPointedText("7", DISPLAY_POINT::LEFT_CENTER);
-		printPointedText("8", DISPLAY_POINT::BOTTOM_LEFT);
-
-		printPointedText("shits not done yet :DD", DISPLAY_POINT::CENTER, 0, 24);
-	} while (display.nextPage());
-
-	display.hibernate();
-}
-
-void setupDisplay() {
-	display.init(BAUD_RATE, true, 2, false); // Clever refresh for Waveshare displays, 2ms pulse
-	display.setRotation(DISPLAY_ROTATION);
+void clearDisplay() {
 	display.fillScreen(GxEPD_WHITE);
+}
 
+void setDisplayDefaults() {
 	display.setTextWrap(false);
 	display.setFont(&FreeMono12pt7b);
 	display.setTextColor(GxEPD_BLACK);
@@ -180,11 +122,79 @@ void setupDisplay() {
 
 	display.setFullWindow();
 	display.firstPage();
+}
 
-	displayBootSplash();
-	delay(SPLASH_DURATION);
+void displayBootSplash() {
+	if (DISABLE_DISPLAY) { return; }
 
-	displayPrimaryScreen();
+	do {
+		display.fillScreen(GxEPD_WHITE);
+		printPointedText(SPLASH_SCREEN_TITLE, DISPLAY_POINT::TOP_CENTER);
+
+		display.setFont(&FreeMono9pt7b);
+
+		printPointedText("Software " + String(SOFTWARE_VERSION), DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		printPointedText("Hardware " + String(HARDWARE_VERSION), DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText(SPLASH_SCREEN_FOOTER, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
+void displayAccessPointScreen(APCredentials apCredentials) {
+	if (DISABLE_DISPLAY) { return; }
+
+	do {
+		display.fillScreen(GxEPD_WHITE);
+		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
+
+		display.setFont(&FreeMono9pt7b);
+
+		printPointedText(apCredentials.ssid, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		printPointedText(apCredentials.password, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText(apCredentials.APIP, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
+void displayPrimaryScreen() {
+	if (DISABLE_DISPLAY) { return; }
+
+	do {
+		display.fillScreen(GxEPD_WHITE);
+		display.setFont(&FreeMono9pt7b);
+
+		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
+		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
+
+		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
+		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
+void displayGoingToSleepScreen() {
+	do {
+		display.fillCircle(0, 0, 15, GxEPD_WHITE);
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
+void setupDisplay() {
+	if (DISABLE_DISPLAY) { return; }
+
+	display.init(BAUD_RATE, true, 2, false); // Clever refresh for Waveshare displays, 2ms pulse
+	display.setRotation(DISPLAY_ROTATION);
+
+	setDisplayDefaults();
+	clearDisplay();
 }
 
 //==============================================================

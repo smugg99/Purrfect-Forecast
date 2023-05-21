@@ -11,24 +11,10 @@
 #include "data.h"
 #include "display.h" // for example Waveshare 2.9" E-paper display (12956)
 
-const int JSON_BUFFER_SIZE = 1024;  // Adjust the buffer size as per your JSON data size
-const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
 WiFiClient client;
 HTTPClient http;
 
 DHTesp dht;
-
-// In the future below settings will be stored in the EEPROM
-FetchDataUnits FETCH_DATA_UNITS = FetchDataUnits::METRIC;
-float LONGITUDE = DEFAULT_LONGITUDE;
-float LATITUDE = DEFAULT_LATITUTE;
-
-String WIFI_SSID = DEFAULT_WIFI_SSID;
-String WIFI_PASSWORD = DEFAULT_WIFI_PASSWORD;
-
-FetchedData lastCurrentWeatherData;
-FetchedData* lastWeatherForecastData;
 
 //==============================================================
 //	Functions
@@ -39,6 +25,51 @@ void debugPrint(T const& value, bool nl = true) {
 	if (!DEBUG) { return; }
 	if (nl) { Serial.println(value); }
 	else { Serial.print(value); }
+}
+
+void debugTone(ToneType toneType) {
+	switch (toneType) {
+	case ToneType::SUCCESS:
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(100);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(30);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(30);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(30);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(250);
+		digitalWrite(BUZZER_PIN, LOW);
+
+		break;
+
+	case ToneType::ERROR:
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(250);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(10);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(10);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(10);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(100);
+		digitalWrite(BUZZER_PIN, LOW);
+
+		break;
+
+	case ToneType::INFO:
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(100);
+		digitalWrite(BUZZER_PIN, LOW);
+		delay(20);
+		digitalWrite(BUZZER_PIN, HIGH);
+		delay(50);
+		digitalWrite(BUZZER_PIN, LOW);
+
+		break;
+	}
 }
 
 String generatePassword(uint8_t length = AP_PASSWORD_LENGTH) {
@@ -91,6 +122,7 @@ GETResult simpleGET(String url) {
 	int _responseCode = http.GET();
 	String _payload = http.getString();
 
+	debugPrint("Payload received: ");
 	debugPrint(_payload);
 
 	http.end();
@@ -130,7 +162,7 @@ bool waitForWiFiConnection() {
 	return true;
 }
 
-void launchAccessPoint() {
+APCredentials launchAccessPoint() {
 	WiFi.mode(WIFI_AP);
 
 	String _password = generatePassword();
@@ -147,10 +179,15 @@ void launchAccessPoint() {
 	debugPrint("AP IP: ");
 	debugPrint(_APIP);
 
-	//displayAccessPointScreen(_ssid, _password, _APIP);
+	APCredentials _apCredentials;
+	_apCredentials.ssid = _ssid;
+	_apCredentials.password = _password;
+	_apCredentials.APIP = _APIP;
+
+	return _apCredentials;
 }
 
-void connectToWiFi() {
+bool connectToWiFi() {
 	debugPrint("\nConnecting to: ");
 	debugPrint(WIFI_SSID);
 
@@ -161,33 +198,24 @@ void connectToWiFi() {
 		debugPrint("Connection established!");
 		debugPrint(WiFi.localIP());
 		debugPrint(WiFi.macAddress());
+
+		return true;
 	}
-	else {
-		debugPrint("Connection failed! Launching AP...");
-		launchAccessPoint();
-	}
+
+	debugPrint("Connection failed!");
+
+	return false;
 }
 
-void checkWiFiConnection() {
+bool checkWiFiConnection() {
 	if (WiFi.status() != WL_CONNECTED) {
-		debugPrint("Connection lost! Trying to reconnect...");
-		connectToWiFi();
+		debugPrint("Connection not ok!");
+		return false;
 	}
 	else {
 		debugPrint("Connection ok!");
+		return true;
 	}
-}
-
-
-void ICACHE_RAM_ATTR wakeUp() {
-	wifi_set_sleep_type(NONE_SLEEP_T);
-
-	displayPrimaryScreen();
-	delay(FIXED_DELAY);
-
-	debugPrint("Waking up!");
-
-	ESP.deepSleep(SLEEP_DURATION);
 }
 
 void goToSleep() {
@@ -195,51 +223,96 @@ void goToSleep() {
 
 	// Idk why but this shit beeps when going to sleep...
 	digitalWrite(BUZZER_PIN, LOW);
+	displayGoingToSleepScreen();
+
+	delay(FIXED_DELAY);
 
 	ESP.deepSleep(SLEEP_DURATION);
 }
 
-
-FetchedData* _fetchWeatherForecast() {
+void _fetchWeatherForecast() {
 	debugPrint("Fetching weather forecast...");
-	checkWiFiConnection();
+
+	if (!checkWiFiConnection()) {
+		return;
+	}
 
 	String currentWeatherUrl = buildUrl(FetchDataType::WEATHER_FORECAST);
 	GETResult getResult = simpleGET(currentWeatherUrl);
 
-	return lastWeatherForecastData;
+	if (!getResult.ok) {
+		debugPrint("Failed fetching weather forecast!");
+		return;
+	}
+
+	DynamicJsonDocument document(JSON_BUFFER_SIZE);
+	deserializeJson(document, getResult.payload);
+
+	if (!document.containsKey("list")) {
+		debugPrint("Invalid JSON format!");
+		return;
+	}
+
+	JsonArray forecastArray = document["list"].as<JsonArray>();
+	FetchedData newWeatherForecastData[forecastArray.size()] = {};
+
+	if (forecastArray.size() > 0) {
+		for (size_t i = 0; i < forecastArray.size(); i++) {
+			JsonObject forecast = forecastArray[i].as<JsonObject>();
+
+			FetchedData newWeatherData;
+			newWeatherData.feelsLikeTemperature = forecast["main"]["feels_like"];
+			newWeatherData.humidity = forecast["main"]["humidity"];
+			newWeatherData.pressure = forecast["main"]["pressure"];
+			newWeatherData.temperature = forecast["main"]["temp"];
+
+			newWeatherForecastData[i] = newWeatherData;
+		}
+	}
+
+	for (size_t i = 0; i < FORECAST_DAYS_AMOUNT; i++) {
+		weatherForecastData[i] = newWeatherForecastData[i];
+	}
 }
 
-FetchedData _fetchCurrentWeather() {
+void _fetchCurrentWeather() {
 	debugPrint("Fetching current weather...");
-	checkWiFiConnection();
+
+	if (!checkWiFiConnection()) {
+		return;
+	}
 
 	String currentWeatherUrl = buildUrl(FetchDataType::CURRENT_WEATHER);
 	GETResult getResult = simpleGET(currentWeatherUrl);
 
 	if (!getResult.ok) {
 		debugPrint("Failed fetching current weather!");
-		return lastCurrentWeatherData;
+		return;
 	}
 
 	DynamicJsonDocument document(JSON_BUFFER_SIZE);
 	deserializeJson(document, getResult.payload);
 
-	FetchedData fetchedCurrentWeatherData;
-	fetchedCurrentWeatherData.temperature = document["main"]["temp"];
-	fetchedCurrentWeatherData.feelsLikeTemperature = document["main"]["feels_like"];
-	fetchedCurrentWeatherData.humidity = document["main"]["humidity"];
-	fetchedCurrentWeatherData.pressure = document["main"]["pressure"];
+	if (!document.containsKey("main")) {
+		debugPrint("Invalid JSON format!");
+		return;
+	}
 
-	debugPrint("FHumidity: "); debugPrint(fetchedCurrentWeatherData.humidity);
-	debugPrint("FTemperature: "); debugPrint(fetchedCurrentWeatherData.temperature);
-	debugPrint("FPressure: "); debugPrint(fetchedCurrentWeatherData.pressure);
-	debugPrint("FTemperature feels like: "); debugPrint(fetchedCurrentWeatherData.feelsLikeTemperature);
+	FetchedData newCurrentWeatherData;
+	newCurrentWeatherData.temperature = document["main"]["temp"];
+	newCurrentWeatherData.feelsLikeTemperature = document["main"]["feels_like"];
+	newCurrentWeatherData.humidity = document["main"]["humidity"];
+	newCurrentWeatherData.pressure = document["main"]["pressure"];
 
-	return fetchedCurrentWeatherData;
+	debugPrint("FHumidity: "); debugPrint(newCurrentWeatherData.humidity);
+	debugPrint("FTemperature: "); debugPrint(newCurrentWeatherData.temperature);
+	debugPrint("FPressure: "); debugPrint(newCurrentWeatherData.pressure);
+	debugPrint("FTemperature feels like: "); debugPrint(newCurrentWeatherData.feelsLikeTemperature);
+
+	currentWeatherData = newCurrentWeatherData;
 }
 
-QuantifiedData _quantifyData() {
+void _quantifyData() {
 	float _humidity = dht.getHumidity();
 	float _temperature = dht.getTemperature();
 	float _absoluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
@@ -250,20 +323,19 @@ QuantifiedData _quantifyData() {
 	debugPrint("Absoulute humidity: "); debugPrint(_absoluteHumidity);
 	debugPrint("Dew point: "); debugPrint(_dewPoint);
 
-	QuantifiedData quantifiedData;
-	quantifiedData.humidity = _humidity;
-	quantifiedData.temperature = _temperature;
+	QuantifiedData newQuantifiedData;
+	newQuantifiedData.humidity = _humidity;
+	newQuantifiedData.temperature = _temperature;
 
-	return quantifiedData;
+	quantifiedData = newQuantifiedData;
 }
 
 // Implement last quantified data etc. caching logic to handle http errors
-void handleData() {
-	FetchedData currentWeatherData = _fetchCurrentWeather();
-	FetchedData* weatherForecastData = _fetchWeatherForecast();
-	QuantifiedData quantifiedData = _quantifyData();
+void updateData() {
+	_fetchCurrentWeather();
+	_fetchWeatherForecast();
+	_quantifyData();
 }
-
 
 void setup() {
 	pinMode(ADC_PIN, INPUT);
@@ -276,23 +348,43 @@ void setup() {
 
 	if (DEBUG) {
 		Serial.begin(BAUD_RATE);
+		Serial.setTimeout(2000);
 
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(20);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(50);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(50);
-		digitalWrite(BUZZER_PIN, LOW);
+		while (!Serial) {
+			delay(FIXED_DELAY);
+		}
+
+		debugTone(ToneType::ERROR);
+		delay(1000);
+		debugTone(ToneType::SUCCESS);
+		delay(1000);
+		debugTone(ToneType::INFO);
+		delay(1000);
 	}
 
 	dht.setup(DHT_DATA_PIN, DHTesp::DHT11);
 
-	//setupDisplay();
-	connectToWiFi();
-	handleData();
+	setupUnits();
+	setupDisplay();
 
-	//goToSleep();
+	displayBootSplash();
+	delay(BOOT_SPLASH_DURATION);
+
+	bool connectionEstablished = connectToWiFi();
+
+	if (!connectionEstablished) {
+		APCredentials apCredentials = launchAccessPoint();
+		displayAccessPointScreen(apCredentials);
+
+		// Go to sleep after some time when user didn't configure the WiFi yet
+		// delay(INACTIVE_DURATION);
+		// goToSleep();
+	}
+	else {
+		updateData();
+		displayPrimaryScreen();
+		goToSleep();
+	}
 }
 
 // Not used because the ESP wakes itself repeatedly
