@@ -1,7 +1,3 @@
-#include <GxEPD2_BW.h>
-#include <GxEPD2_3C.h>
-#include <GxEPD2_7C.h>
-
 #include "fonts/Linerama_Regular5pt7b.h"
 #include "fonts/Linerama_Regular6pt7b.h"
 #include "fonts/Linerama_Regular7pt7b.h"
@@ -142,6 +138,28 @@ void setDisplayDefaults() {
 	display.firstPage();
 }
 
+void displayAccessPointScreen(APCredentials apCredentials) {
+	if (DISABLE_DISPLAY) { return; }
+
+	String qrCodeContent = qrEncodeAPCredentials(apCredentials);
+
+	do {
+		display.fillScreen(GxEPD_WHITE);
+
+		display.setFont(&Linerama_Bold12pt7b);
+		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
+
+		display.setFont(&Linerama_Regular8pt7b);
+
+		printPointedText(apCredentials.ssid, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		printPointedText(apCredentials.password, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText(apCredentials.APIP, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
 void displayBootSplash() {
 	if (DISABLE_DISPLAY) { return; }
 
@@ -164,35 +182,6 @@ void displayBootSplash() {
 	display.hibernate();
 }
 
-void displayAccessPointScreen(APCredentials apCredentials) {
-	if (DISABLE_DISPLAY) { return; }
-
-	String qrCodeContent = qrEncodeAPCredentials(apCredentials);
-
-	QRCode qrCode;
-	uint8_t qrCodeBytes[qrcode_getBufferSize(24)];
-
-	qrcode_initText(&qrCode, qrCodeBytes, 24, ECC_LOW, qrCodeContent.c_str());
-
-	do {
-		display.fillScreen(GxEPD_WHITE);
-
-		display.setFont(&Linerama_Bold12pt7b);
-		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
-
-		display.drawBitmap(0, 0, qrCodeBytes, 113, 113, GxEPD_BLACK);
-
-		display.setFont(&Linerama_Regular8pt7b);
-
-		printPointedText(apCredentials.ssid, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		printPointedText(apCredentials.password, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
-		printPointedText(apCredentials.APIP, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
-	} while (display.nextPage());
-
-	setDisplayDefaults();
-	display.hibernate();
-}
-
 void displayPrimaryScreen() {
 	if (DISABLE_DISPLAY) { return; }
 
@@ -204,13 +193,13 @@ void displayPrimaryScreen() {
 		printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
 		printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 
-		display.drawBitmap(0, 0, getBitmap(Bitmap::DAY), 48, 48, GxEPD_WHITE);
-		
 		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
 		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
 
 		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
 		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
+
+		display.drawBitmap(124, 70, epd_bitmap_allArray[0], 48, 48, GxEPD_BLACK);
 	} while (display.nextPage());
 
 	setDisplayDefaults();

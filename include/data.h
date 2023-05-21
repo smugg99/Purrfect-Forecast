@@ -92,14 +92,22 @@ void setupUnits() {
 	}
 }
 
-String removeTrailingZeros(String value) {
-	value.trim();
-	float floatValue = value.toFloat();
+String removeTrailingZeros(const String& input) {
+	int lastNonZeroIndex = -1;
+	int length = input.length();
 
-	String str = String(floatValue);
-	str.trim();
+	for (int i = length - 1; i >= 0; i--) {
+		if (input.charAt(i) != '0') {
+			lastNonZeroIndex = i;
+			break;
+		}
+	}
 
-	return str;
+	if (lastNonZeroIndex == -1) {
+		return input;
+	}
+
+	return input.substring(0, lastNonZeroIndex + 1);
 }
 
 String toTemperature(float temperature) {

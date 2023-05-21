@@ -10,6 +10,10 @@ void debugPrint(T const& value, bool nl = true) {
 }
 
 void debugTone(ToneType toneType) {
+	if (DISABLE_BUZZER) {
+		return;
+	}
+	
 	switch (toneType) {
 	case ToneType::SUCCESS:
 		digitalWrite(BUZZER_PIN, HIGH);

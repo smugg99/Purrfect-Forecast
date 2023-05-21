@@ -1,5 +1,8 @@
 #include <Arduino.h>
 
+#include <GxEPD2_BW.h>
+#include <Adafruit_GFX.h>
+
 #include <ArduinoJson.h>
 
 #include <AsyncElegantOTA.h>
