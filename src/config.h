@@ -29,7 +29,7 @@
 //==============================================================
 
 #define DEFAULT_WIFI_SSID "Funbox6-420D"
-#define DEFAULT_WIFI_PASSWORD "Wysowianka1"
+#define DEFAULT_WIFI_PASSWORD "Wysowianka11"
 
 #define DEFAULT_PORT 80
 #define PING_DNS "8.8.8.8" // Le Google DNS server

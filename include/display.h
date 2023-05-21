@@ -20,6 +20,8 @@
 #include "fonts/Linerama_Bold11pt7b.h"
 #include "fonts/Linerama_Bold12pt7b.h"
 
+#include "bitmaps.h"
+
 GxEPD2_BW<GxEPD2_290_T94_V2, GxEPD2_290_T94_V2::HEIGHT> display(GxEPD2_290_T94_V2(CS_PIN, DC_PIN, RST_PIN, BUSY_PIN)); // GDEM029T94 128x296, SSD1680, Waveshare 2.9" V2 variant
 
 const u_int16_t DISPLAY_WIDTH = display.width();
@@ -202,6 +204,8 @@ void displayPrimaryScreen() {
 		printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
 		printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 
+		display.drawBitmap(0, 0, getBitmap(Bitmap::DAY), 48, 48, GxEPD_WHITE);
+		
 		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
 		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
 
