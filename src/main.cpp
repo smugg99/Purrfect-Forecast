@@ -1,146 +1,26 @@
 #include <Arduino.h>
 
 #include <ArduinoJson.h>
+
+#include <AsyncElegantOTA.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266Ping.h>
 
 #include <DHTesp.h>
 #include <SPI.h>
+#include <qrcode.h>
 
 #include "config.h"
 #include "data.h"
+#include "utils.h"
 #include "display.h" // for example Waveshare 2.9" E-paper display (12956)
-
-WiFiClient client;
-HTTPClient http;
-
-DHTesp dht;
 
 //==============================================================
 //	Functions
 //==============================================================
-
-template <typename T>
-void debugPrint(T const& value, bool nl = true) {
-	if (!DEBUG) { return; }
-	if (nl) { Serial.println(value); }
-	else { Serial.print(value); }
-}
-
-void debugTone(ToneType toneType) {
-	switch (toneType) {
-	case ToneType::SUCCESS:
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(100);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(30);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(30);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(30);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(250);
-		digitalWrite(BUZZER_PIN, LOW);
-
-		break;
-
-	case ToneType::ERROR:
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(250);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(10);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(10);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(10);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(100);
-		digitalWrite(BUZZER_PIN, LOW);
-
-		break;
-
-	case ToneType::INFO:
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(100);
-		digitalWrite(BUZZER_PIN, LOW);
-		delay(20);
-		digitalWrite(BUZZER_PIN, HIGH);
-		delay(50);
-		digitalWrite(BUZZER_PIN, LOW);
-
-		break;
-	}
-}
-
-String generatePassword(uint8_t length = AP_PASSWORD_LENGTH) {
-	String password;
-
-	for (int i = 0; i < length; ++i) {
-		int randomIndex = random(PASSWORD_CHARS.length());
-		password += PASSWORD_CHARS[randomIndex];
-	}
-
-	return password;
-}
-
-String buildUrl(FetchDataType fetchDataType = FetchDataType::CURRENT_WEATHER) {
-	String url = API_ENDPOINT;
-	String secondaryUrl = "?lat=" + String(LATITUDE) + "&lon=" + String(LONGITUDE) + "&mode=json&units=";
-
-	switch (FETCH_DATA_UNITS) {
-	case FetchDataUnits::METRIC:
-		secondaryUrl.concat(API_METRIC_UNITS);
-		break;
-	case FetchDataUnits::IMPERIAL:
-		secondaryUrl.concat(API_IMPERIAL_UNITS);
-		break;
-	}
-
-	switch (fetchDataType) {
-	case FetchDataType::CURRENT_WEATHER:
-		url.concat(API_CURRENT_WEATHER);
-		break;
-	case FetchDataType::WEATHER_FORECAST:
-		url.concat(API_WEATHER_FORECAST);
-		secondaryUrl.concat("&cn=" + FORECAST_TIMESTAMPS_AMOUNT);
-		break;
-	}
-
-	// Compilator throws an error without explicitly stating the api key is a string...
-	secondaryUrl.concat("&appid=" + String(API_KEY));
-	url.concat(secondaryUrl);
-
-	debugPrint("Url built: ");
-	debugPrint(url);
-
-	return url;
-}
-
-GETResult simpleGET(String url) {
-	http.begin(client, url);
-
-	int _responseCode = http.GET();
-	String _payload = http.getString();
-
-	debugPrint("Payload received: ");
-	debugPrint(_payload);
-
-	http.end();
-
-	GETResult getResult;
-	getResult.payload = _payload;
-	getResult.responseCode = _responseCode;
-
-	if (getResult.responseCode != HTTP_CODE_OK) {
-		debugPrint("Http request error of code: ");
-		debugPrint(getResult.responseCode);
-
-		getResult.ok = false;
-	}
-
-	return getResult;
-}
-
 
 bool waitForWiFiConnection() {
 	debugPrint("Waiting for connection...");
@@ -207,19 +87,47 @@ bool connectToWiFi() {
 	return false;
 }
 
-bool checkWiFiConnection() {
-	if (WiFi.status() != WL_CONNECTED) {
-		debugPrint("Connection not ok!");
+bool checkInternetConnection() {
+	if (!Ping.ping(PING_DNS)) {
+		debugPrint("Internet connection not ok!");
 		return false;
 	}
-	else {
-		debugPrint("Connection ok!");
-		return true;
+
+	debugPrint("Internet connection ok!");
+	return true;
+}
+
+bool checkWiFiConnection() {
+	if (WiFi.status() != WL_CONNECTED) {
+		debugPrint("WiFi connection not ok!");
+		return false;
 	}
+
+	debugPrint("WiFi connection ok!");
+	return true;
+}
+
+void startServer() {
+	debugPrint("Starting server...");
+
+	server.on("/", HTTP_GET, [] (AsyncWebServerRequest* request) {
+		request->send(200, "text/plain", "Sup nigga, add \"/update\" to the url to access the OTA panel!");
+		});
+
+	AsyncElegantOTA.begin(&server);
+	server.begin();
+
+	debugTone(ToneType::INFO);
 }
 
 void goToSleep() {
+	if (DISABLE_SLEEP) {
+		debugPrint("Sleep is disabled due to OTA functionality!");
+		return;
+	}
+
 	debugPrint("Going to sleep!");
+	debugTone(ToneType::INFO);
 
 	// Idk why but this shit beeps when going to sleep...
 	digitalWrite(BUZZER_PIN, LOW);
@@ -230,11 +138,11 @@ void goToSleep() {
 	ESP.deepSleep(SLEEP_DURATION);
 }
 
-void _fetchWeatherForecast() {
+bool _fetchWeatherForecast() {
 	debugPrint("Fetching weather forecast...");
 
 	if (!checkWiFiConnection()) {
-		return;
+		return false;
 	}
 
 	String currentWeatherUrl = buildUrl(FetchDataType::WEATHER_FORECAST);
@@ -242,7 +150,7 @@ void _fetchWeatherForecast() {
 
 	if (!getResult.ok) {
 		debugPrint("Failed fetching weather forecast!");
-		return;
+		return false;
 	}
 
 	DynamicJsonDocument document(JSON_BUFFER_SIZE);
@@ -250,7 +158,7 @@ void _fetchWeatherForecast() {
 
 	if (!document.containsKey("list")) {
 		debugPrint("Invalid JSON format!");
-		return;
+		return false;
 	}
 
 	JsonArray forecastArray = document["list"].as<JsonArray>();
@@ -273,13 +181,15 @@ void _fetchWeatherForecast() {
 	for (size_t i = 0; i < FORECAST_DAYS_AMOUNT; i++) {
 		weatherForecastData[i] = newWeatherForecastData[i];
 	}
+
+	return true;
 }
 
-void _fetchCurrentWeather() {
+bool _fetchCurrentWeather() {
 	debugPrint("Fetching current weather...");
 
 	if (!checkWiFiConnection()) {
-		return;
+		return false;
 	}
 
 	String currentWeatherUrl = buildUrl(FetchDataType::CURRENT_WEATHER);
@@ -287,7 +197,7 @@ void _fetchCurrentWeather() {
 
 	if (!getResult.ok) {
 		debugPrint("Failed fetching current weather!");
-		return;
+		return false;
 	}
 
 	DynamicJsonDocument document(JSON_BUFFER_SIZE);
@@ -295,7 +205,7 @@ void _fetchCurrentWeather() {
 
 	if (!document.containsKey("main")) {
 		debugPrint("Invalid JSON format!");
-		return;
+		return false;
 	}
 
 	FetchedData newCurrentWeatherData;
@@ -310,6 +220,8 @@ void _fetchCurrentWeather() {
 	debugPrint("FTemperature feels like: "); debugPrint(newCurrentWeatherData.feelsLikeTemperature);
 
 	currentWeatherData = newCurrentWeatherData;
+
+	return true;
 }
 
 void _quantifyData() {
@@ -331,10 +243,10 @@ void _quantifyData() {
 }
 
 // Implement last quantified data etc. caching logic to handle http errors
-void updateData() {
-	_fetchCurrentWeather();
-	_fetchWeatherForecast();
+bool updateData() {
 	_quantifyData();
+
+	return _fetchCurrentWeather() && _fetchWeatherForecast();
 }
 
 void setup() {
@@ -373,6 +285,8 @@ void setup() {
 	bool connectionEstablished = connectToWiFi();
 
 	if (!connectionEstablished) {
+		debugTone(ToneType::ERROR);
+
 		APCredentials apCredentials = launchAccessPoint();
 		displayAccessPointScreen(apCredentials);
 
@@ -381,7 +295,15 @@ void setup() {
 		// goToSleep();
 	}
 	else {
-		updateData();
+		debugTone(ToneType::SUCCESS);
+
+		startServer();
+
+		// Update the devices status report
+		stationStatus.apiAccess = updateData();
+		stationStatus.internetAccess = checkInternetConnection();
+		stationStatus.wifiConnected = checkWiFiConnection();
+
 		displayPrimaryScreen();
 		goToSleep();
 	}

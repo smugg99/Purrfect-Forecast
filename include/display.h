@@ -2,9 +2,23 @@
 #include <GxEPD2_3C.h>
 #include <GxEPD2_7C.h>
 
-#include <Fonts/FreeMono9pt7b.h>
-#include <Fonts/FreeMono12pt7b.h>
-#include <Fonts/FreeMono18pt7b.h>
+#include "fonts/Linerama_Regular5pt7b.h"
+#include "fonts/Linerama_Regular6pt7b.h"
+#include "fonts/Linerama_Regular7pt7b.h"
+#include "fonts/Linerama_Regular8pt7b.h"
+#include "fonts/Linerama_Regular9pt7b.h"
+#include "fonts/Linerama_Regular10pt7b.h"
+#include "fonts/Linerama_Regular11pt7b.h"
+#include "fonts/Linerama_Regular12pt7b.h"
+
+#include "fonts/Linerama_Bold5pt7b.h"
+#include "fonts/Linerama_Bold6pt7b.h"
+#include "fonts/Linerama_Bold7pt7b.h"
+#include "fonts/Linerama_Bold8pt7b.h"
+#include "fonts/Linerama_Bold9pt7b.h"
+#include "fonts/Linerama_Bold10pt7b.h"
+#include "fonts/Linerama_Bold11pt7b.h"
+#include "fonts/Linerama_Bold12pt7b.h"
 
 GxEPD2_BW<GxEPD2_290_T94_V2, GxEPD2_290_T94_V2::HEIGHT> display(GxEPD2_290_T94_V2(CS_PIN, DC_PIN, RST_PIN, BUSY_PIN)); // GDEM029T94 128x296, SSD1680, Waveshare 2.9" V2 variant
 
@@ -51,32 +65,34 @@ void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_PO
 
 		break;
 	case TOP_LEFT:
-		centerY = y + tbh;
+		centerY = y + tbh + SAFETY_MARGIN_Y;
+		centerX = x + SAFETY_MARGIN_X;
 
 		break;
 	case TOP_RIGHT:
 		x = display.width();
-		centerX = x - tbw;
-		centerY = y + tbh;
+		centerX = x - tbw - SAFETY_MARGIN_X;
+		centerY = y + tbh + SAFETY_MARGIN_Y;
 
 		break;
 	case TOP_CENTER:
 		x = display.width() / 2;
 		centerX = x - (tbw / 2);
-		centerY = y + tbh;
+		centerY = y + tbh + SAFETY_MARGIN_Y;
 
 		break;
 	case BOTTOM_LEFT:
 		y = display.height();
-		centerY = y - (tbh / 2);
+		centerY = y - (tbh / 2) - SAFETY_MARGIN_Y;
+		centerX = x + SAFETY_MARGIN_X;
 
 		break;
 	case BOTTOM_RIGHT:
 		x = display.width();
 		y = display.height();
 
-		centerX = x - tbw;
-		centerY = y - (tbh / 2);
+		centerX = x - tbw - SAFETY_MARGIN_X;
+		centerY = y - (tbh / 2) - SAFETY_MARGIN_Y;
 
 		break;
 	case BOTTOM_CENTER:
@@ -84,21 +100,21 @@ void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_PO
 		y = display.height();
 
 		centerX = x - (tbw / 2);
-		centerY = y - (tbh / 2);
+		centerY = y - (tbh / 2) - SAFETY_MARGIN_Y;
 
 		break;
 	case RIGHT_CENTER:
 		x = display.width();
 		y = display.height() / 2;
 
-		centerX = x - tbw;
+		centerX = x - tbw - SAFETY_MARGIN_X;
 		centerY = y - (tbh / 2);
 
 		break;
 	case LEFT_CENTER:
 		y = display.height() / 2;
 
-		centerX = x;
+		centerX = x + SAFETY_MARGIN_X;
 		centerY = y - (tbh / 2);
 
 		break;
@@ -116,7 +132,7 @@ void clearDisplay() {
 
 void setDisplayDefaults() {
 	display.setTextWrap(false);
-	display.setFont(&FreeMono12pt7b);
+	display.setFont(&Linerama_Regular12pt7b);
 	display.setTextColor(GxEPD_BLACK);
 	display.setTextSize(1);
 
@@ -129,13 +145,17 @@ void displayBootSplash() {
 
 	do {
 		display.fillScreen(GxEPD_WHITE);
+
+		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText(SPLASH_SCREEN_TITLE, DISPLAY_POINT::TOP_CENTER);
 
-		display.setFont(&FreeMono9pt7b);
+		display.setFont(&Linerama_Regular8pt7b);
+		printPointedText("Connecting to " + String(WIFI_SSID) + "...");
 
-		printPointedText("Software " + String(SOFTWARE_VERSION), DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		printPointedText("Hardware " + String(HARDWARE_VERSION), DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
-		printPointedText(SPLASH_SCREEN_FOOTER, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+		display.setFont(&Linerama_Regular6pt7b);
+		printPointedText(SPLASH_SCREEN_FOOTER, DISPLAY_POINT::BOTTOM_CENTER);
+		printPointedText("Software " + String(SOFTWARE_VERSION), DISPLAY_POINT::BOTTOM_LEFT);
+		printPointedText("Hardware " + String(HARDWARE_VERSION), DISPLAY_POINT::BOTTOM_RIGHT);
 	} while (display.nextPage());
 
 	setDisplayDefaults();
@@ -145,15 +165,26 @@ void displayBootSplash() {
 void displayAccessPointScreen(APCredentials apCredentials) {
 	if (DISABLE_DISPLAY) { return; }
 
+	String qrCodeContent = qrEncodeAPCredentials(apCredentials);
+
+	QRCode qrCode;
+	uint8_t qrCodeBytes[qrcode_getBufferSize(24)];
+
+	qrcode_initText(&qrCode, qrCodeBytes, 24, ECC_LOW, qrCodeContent.c_str());
+
 	do {
 		display.fillScreen(GxEPD_WHITE);
+
+		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
 
-		display.setFont(&FreeMono9pt7b);
+		display.drawBitmap(0, 0, qrCodeBytes, 113, 113, GxEPD_BLACK);
 
-		printPointedText(apCredentials.ssid, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		printPointedText(apCredentials.password, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
-		printPointedText(apCredentials.APIP, DISPLAY_POINT::BOTTOM_CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+		display.setFont(&Linerama_Regular8pt7b);
+
+		printPointedText(apCredentials.ssid, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		printPointedText(apCredentials.password, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText(apCredentials.APIP, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 	} while (display.nextPage());
 
 	setDisplayDefaults();
@@ -165,7 +196,11 @@ void displayPrimaryScreen() {
 
 	do {
 		display.fillScreen(GxEPD_WHITE);
-		display.setFont(&FreeMono9pt7b);
+		display.setFont(&Linerama_Regular8pt7b);
+
+		printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 
 		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
 		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
@@ -180,7 +215,7 @@ void displayPrimaryScreen() {
 
 void displayGoingToSleepScreen() {
 	do {
-		display.fillCircle(0, 0, 15, GxEPD_WHITE);
+		display.fillCircle(0, 0, 15, GxEPD_BLACK);
 	} while (display.nextPage());
 
 	setDisplayDefaults();

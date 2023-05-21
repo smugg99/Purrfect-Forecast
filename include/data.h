@@ -14,6 +14,12 @@ enum FetchDataType {
 	WEATHER_FORECAST
 };
 
+struct StationStatus {
+	bool internetAccess;
+	bool wifiConnected;
+	bool apiAccess;
+};
+
 struct APCredentials {
 	String ssid;
 	String password;
@@ -56,8 +62,16 @@ String WIFI_PASSWORD = DEFAULT_WIFI_PASSWORD;
 
 FetchedData currentWeatherData;
 FetchedData weatherForecastData[FORECAST_DAYS_AMOUNT];
-
 QuantifiedData quantifiedData;
+
+StationStatus stationStatus;
+
+WiFiClient client;
+HTTPClient http;
+
+DHTesp dht;
+
+AsyncWebServer server(DEFAULT_PORT);
 
 //==============================================================
 //	Functions
@@ -94,6 +108,10 @@ String toTemperature(float temperature) {
 
 String toHumidity(float humidity) {
 	return removeTrailingZeros(String(humidity)) + HUMIDITY_UNIT;
+}
+
+String toBool(bool value) {
+	return value ? "true" : "false";
 }
 
 //==============================================================

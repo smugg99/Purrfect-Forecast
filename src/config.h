@@ -1,5 +1,7 @@
 #include "secrets.h"
 
+// Note: Size of the display I am currently using is 296x128 px 
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -27,7 +29,10 @@
 //==============================================================
 
 #define DEFAULT_WIFI_SSID "Funbox6-420D"
-#define DEFAULT_WIFI_PASSWORD "Wysowianka11"
+#define DEFAULT_WIFI_PASSWORD "Wysowianka1"
+
+#define DEFAULT_PORT 80
+#define PING_DNS "8.8.8.8" // Le Google DNS server
 
 #define DEFAULT_LATITUTE 49.5693
 #define DEFAULT_LONGITUDE 20.8849
@@ -38,6 +43,7 @@
 #define BAUD_RATE 115200
 #define DEBUG true
 #define DISABLE_DISPLAY false
+#define DISABLE_SLEEP true
 
 #define FIXED_DELAY 500
 
@@ -63,8 +69,11 @@
 
 #define DISPLAY_ROTATION 3  // Rotate the display 180* because I am retarded and designed the case in the wrong way
 
+#define SAFETY_MARGIN_X 2
+#define SAFETY_MARGIN_Y 2
+
 #define FOOTER_OFFSET_X 0
-#define FOOTER_OFFSET_Y 25
+#define FOOTER_OFFSET_Y 15
 
 //==============================================================
 //	Defaults
