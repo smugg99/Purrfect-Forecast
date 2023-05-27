@@ -3,14 +3,15 @@
 #include <GxEPD2_BW.h>
 #include <Adafruit_GFX.h>
 
-#include <ArduinoJson.h>
-
-#include <AsyncElegantOTA.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266Ping.h>
+
+#include <ArduinoJson.h>
+#include <AsyncElegantOTA.h>
+#include <WebSerialLite.h>
 
 #include <DHTesp.h>
 #include <SPI.h>
@@ -110,14 +111,26 @@ bool checkWiFiConnection() {
 	return true;
 }
 
+void recvMsg(uint8_t* data, size_t len) {
+	debugPrint("[Callback]: ", false);
+	String d = "";
+	for (int i = 0; i < len; i++) {
+		d += char(data[i]);
+	}
+	debugPrint(d);
+}
+
 void startServer() {
 	debugPrint("Starting server...");
 
 	server.on("/", HTTP_GET, [] (AsyncWebServerRequest* request) {
-		request->send(200, "text/plain", "Sup nigga, add \"/update\" to the url to access the OTA panel!");
+		request->send(200, "text/plain", "\"/update\" ---> OTA\n\"/webserial\" ---> SERIAL");
 		});
 
+	WebSerial.begin(&server);
+	WebSerial.onMessage(recvMsg);
 	AsyncElegantOTA.begin(&server);
+
 	server.begin();
 
 	debugTone(ToneType::INFO);

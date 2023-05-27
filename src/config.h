@@ -43,6 +43,7 @@
 #define BAUD_RATE 115200
 
 #define DEBUG true
+#define ALSO_USE_WEB_SERIAL true
 
 #define DISABLE_DISPLAY false
 #define DISABLE_SLEEP true

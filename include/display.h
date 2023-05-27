@@ -1,21 +1,4 @@
-#include "fonts/Linerama_Regular5pt7b.h"
-#include "fonts/Linerama_Regular6pt7b.h"
-#include "fonts/Linerama_Regular7pt7b.h"
-#include "fonts/Linerama_Regular8pt7b.h"
-#include "fonts/Linerama_Regular9pt7b.h"
-#include "fonts/Linerama_Regular10pt7b.h"
-#include "fonts/Linerama_Regular11pt7b.h"
-#include "fonts/Linerama_Regular12pt7b.h"
-
-#include "fonts/Linerama_Bold5pt7b.h"
-#include "fonts/Linerama_Bold6pt7b.h"
-#include "fonts/Linerama_Bold7pt7b.h"
-#include "fonts/Linerama_Bold8pt7b.h"
-#include "fonts/Linerama_Bold9pt7b.h"
-#include "fonts/Linerama_Bold10pt7b.h"
-#include "fonts/Linerama_Bold11pt7b.h"
-#include "fonts/Linerama_Bold12pt7b.h"
-
+#include "fonts.h"
 #include "bitmaps.h"
 
 GxEPD2_BW<GxEPD2_290_T94_V2, GxEPD2_290_T94_V2::HEIGHT> display(GxEPD2_290_T94_V2(CS_PIN, DC_PIN, RST_PIN, BUSY_PIN)); // GDEM029T94 128x296, SSD1680, Waveshare 2.9" V2 variant
@@ -199,7 +182,9 @@ void displayPrimaryScreen() {
 		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
 		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
 
-		display.drawBitmap(124, 70, epd_bitmap_allArray[0], 48, 48, GxEPD_BLACK);
+		display.drawBitmap(48, 70, bitmap_sun[0], 24, 24, GxEPD_BLACK);
+		display.drawBitmap(120, 70, bitmap_sun[1], 32, 32, GxEPD_BLACK);
+		display.drawBitmap(170, 70, bitmap_sun[2], 48, 48, GxEPD_BLACK);
 	} while (display.nextPage());
 
 	setDisplayDefaults();

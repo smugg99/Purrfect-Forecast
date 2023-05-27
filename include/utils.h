@@ -5,8 +5,14 @@
 template <typename T>
 void debugPrint(T const& value, bool nl = true) {
 	if (!DEBUG) { return; }
+
 	if (nl) { Serial.println(value); }
 	else { Serial.print(value); }
+	
+	if (ALSO_USE_WEB_SERIAL) {
+		if (nl) { WebSerial.println(value); }
+		else { WebSerial.print(value); }
+	}
 }
 
 void debugTone(ToneType toneType) {
