@@ -134,8 +134,8 @@ void displayAccessPointScreen(APCredentials apCredentials) {
 
 		display.setFont(&Linerama_Regular8pt7b);
 
-		printPointedText(apCredentials.ssid, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		printPointedText(apCredentials.password, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		printPointedText(apCredentials.ssid, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, FOOTER_OFFSET_Y * 2);
+		printPointedText(apCredentials.password, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, FOOTER_OFFSET_Y);
 		printPointedText(apCredentials.APIP, DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 	} while (display.nextPage());
 
@@ -165,6 +165,39 @@ void displayBootSplash() {
 	display.hibernate();
 }
 
+void displayBitmaps() {
+	do {
+		display.fillScreen(GxEPD_WHITE);
+
+		uint16_t offsetX = 0;
+		uint16_t offsetY = 0;
+
+		uint16_t currentColumn = 0;
+
+		const uint16_t size = 0;
+		
+		const uint16_t maxWidth = bitmap_size_index[size][0];
+		const uint16_t maxHeight = bitmap_size_index[size][1];
+
+		for (size_t i = 0; i < NUM_OF_BITMAPS; i++) {
+			if (currentColumn >= static_cast<uint16_t>(DISPLAY_WIDTH / maxWidth)) {
+				offsetY += maxHeight;
+				offsetX = 0;
+
+				currentColumn = 0;
+			}
+		
+			display.drawBitmap(offsetX, offsetY, (*bitmaps)[i][size], maxWidth, maxHeight, GxEPD_BLACK);
+
+			currentColumn++;
+			offsetX += maxWidth;
+		}
+	} while (display.nextPage());
+
+	setDisplayDefaults();
+	display.hibernate();
+}
+
 void displayPrimaryScreen() {
 	if (DISABLE_DISPLAY) { return; }
 
@@ -181,11 +214,8 @@ void displayPrimaryScreen() {
 
 		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
 		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
-
-		display.drawBitmap(48, 70, bitmap_sun[0], 24, 24, GxEPD_BLACK);
-		display.drawBitmap(120, 70, bitmap_sun[1], 32, 32, GxEPD_BLACK);
-		display.drawBitmap(170, 70, bitmap_sun[2], 48, 48, GxEPD_BLACK);
 	} while (display.nextPage());
+
 
 	setDisplayDefaults();
 	display.hibernate();

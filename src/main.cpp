@@ -111,10 +111,10 @@ bool checkWiFiConnection() {
 	return true;
 }
 
-void recvMsg(uint8_t* data, size_t len) {
-	debugPrint("[Callback]: ", false);
+void messageReceived(uint8_t* data, size_t len) {
+	debugPrint("[Callback] ", false);
 	String d = "";
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		d += char(data[i]);
 	}
 	debugPrint(d);
@@ -128,7 +128,8 @@ void startServer() {
 		});
 
 	WebSerial.begin(&server);
-	WebSerial.onMessage(recvMsg);
+	WebSerial.onMessage(messageReceived);
+	
 	AsyncElegantOTA.begin(&server);
 
 	server.begin();
@@ -320,7 +321,9 @@ void setup() {
 		stationStatus.internetAccess = checkInternetConnection();
 		stationStatus.wifiConnected = checkWiFiConnection();
 
-		displayPrimaryScreen();
+		//displayPrimaryScreen();
+		displayBitmaps();
+		
 		goToSleep();
 	}
 }

@@ -66,7 +66,7 @@
 #define SPLASH_SCREEN_TITLE "Purrfect Forecast"
 #define SPLASH_SCREEN_FOOTER "Made by Karol Duda"
 
-#define BOOT_SPLASH_DURATION 1500
+#define BOOT_SPLASH_DURATION 500
 
 #define HARDWARE_VERSION "V1.0"
 #define SOFTWARE_VERSION "V0.1"
