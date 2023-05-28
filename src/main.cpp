@@ -321,9 +321,7 @@ void setup() {
 		stationStatus.internetAccess = checkInternetConnection();
 		stationStatus.wifiConnected = checkWiFiConnection();
 
-		//displayPrimaryScreen();
-		displayBitmaps();
-		
+		displayPrimaryScreen();
 		goToSleep();
 	}
 }

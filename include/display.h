@@ -165,39 +165,6 @@ void displayBootSplash() {
 	display.hibernate();
 }
 
-void displayBitmaps() {
-	do {
-		display.fillScreen(GxEPD_WHITE);
-
-		uint16_t offsetX = 0;
-		uint16_t offsetY = 0;
-
-		uint16_t currentColumn = 0;
-
-		const uint16_t size = 0;
-		
-		const uint16_t maxWidth = bitmap_size_index[size][0];
-		const uint16_t maxHeight = bitmap_size_index[size][1];
-
-		for (size_t i = 0; i < NUM_OF_BITMAPS; i++) {
-			if (currentColumn >= static_cast<uint16_t>(DISPLAY_WIDTH / maxWidth)) {
-				offsetY += maxHeight;
-				offsetX = 0;
-
-				currentColumn = 0;
-			}
-		
-			display.drawBitmap(offsetX, offsetY, (*bitmaps)[i][size], maxWidth, maxHeight, GxEPD_BLACK);
-
-			currentColumn++;
-			offsetX += maxWidth;
-		}
-	} while (display.nextPage());
-
-	setDisplayDefaults();
-	display.hibernate();
-}
-
 void displayPrimaryScreen() {
 	if (DISABLE_DISPLAY) { return; }
 
@@ -205,15 +172,60 @@ void displayPrimaryScreen() {
 		display.fillScreen(GxEPD_WHITE);
 		display.setFont(&Linerama_Regular8pt7b);
 
-		printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
-		printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+		// printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
+		// printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
+		// printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
 
-		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
-		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
+		// printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
+		// printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
 
-		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
-		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
+		// printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
+		// printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
+
+		display.drawBitmap(0, 0, bitmap_sun_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(24, 0, bitmap_moon_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(48, 0, bitmap_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(72, 0, bitmap_broken_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(96, 0, bitmap_rainy_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(120, 0, bitmap_snowy_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(144, 0, bitmap_stormy_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(168, 0, bitmap_mixed_cloud_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(192, 0, bitmap_battery_0_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(216, 0, bitmap_battery_1_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(240, 0, bitmap_battery_2_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(264, 0, bitmap_battery_3_24x24, 24, 24, GxEPD_BLACK);
+		
+		display.drawBitmap(0, 24, bitmap_battery_4_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(24, 24, bitmap_battery_5_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(48, 24, bitmap_battery_6_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(72, 24, bitmap_battery_7_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(96, 24, bitmap_coordinates_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(120, 24, bitmap_town_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(144, 24, bitmap_date_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(168, 24, bitmap_clock_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(192, 24, bitmap_internet_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(216, 24, bitmap_no_internet_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(240, 24, bitmap_no_wifi_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(264, 24, bitmap_wifi_0_24x24, 24, 24, GxEPD_BLACK);
+		
+		display.drawBitmap(0, 48, bitmap_wifi_1_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(24, 48, bitmap_wifi_2_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(48, 48, bitmap_wifi_3_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(72, 48, bitmap_wifi_4_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(96, 48, bitmap_sync_error_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(120, 48, bitmap_sync_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(144, 48, bitmap_sleep_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(168, 48, bitmap_snowflake_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(192, 48, bitmap_humidity_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(216, 48, bitmap_flame_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(240, 48, bitmap_visibility_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(264, 48, bitmap_ground_level_24x24, 24, 24, GxEPD_BLACK);
+		
+		display.drawBitmap(0, 72, bitmap_sea_level_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(24, 72, bitmap_pressure_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(48, 72, bitmap_thermometer_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(72, 72, bitmap_feels_like_temperature_24x24, 24, 24, GxEPD_BLACK);
+		display.drawBitmap(96, 72, bitmap_dew_point_24x24, 24, 24, GxEPD_BLACK);
 	} while (display.nextPage());
 
 

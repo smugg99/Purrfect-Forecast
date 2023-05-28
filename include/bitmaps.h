@@ -1,25 +1,18 @@
-#include "bitmaps/sun.h"
-#include "bitmaps/moon.h"
-#include "bitmaps/cloud.h"
-#include "bitmaps/broken_cloud.h"
-#include "bitmaps/rainy_cloud.h"
-#include "bitmaps/snowy_cloud.h"
+#include "avr/pgmspace.h"
 
-const u_int16_t bitmap_size_index[][2]{
-	{24, 24},
-	{32, 32},
-	{48, 48}
-};
+#include "bitmaps/weather/sun.h"
+#include "bitmaps/weather/moon.h"
+#include "bitmaps/weather/cloud.h"
+#include "bitmaps/weather/broken_cloud.h"
+#include "bitmaps/weather/rainy_cloud.h"
+#include "bitmaps/weather/snowy_cloud.h"
+#include "bitmaps/weather/stormy_cloud.h"
+#include "bitmaps/weather/mixed_cloud.h"
 
-#define BITMAP_SIZES sizeof(bitmap_size_index) / sizeof(bitmap_size_index[0])
+#include "bitmaps/status/battery.h"
+#include "bitmaps/status/location.h"
+#include "bitmaps/status/date_time.h"
+#include "bitmaps/status/connections.h"
 
-const unsigned char** bitmaps[][BITMAP_SIZES]{
-	bitmap_sun,
-	bitmap_moon,
-	bitmap_cloud,
-	bitmap_broken_cloud,
-	bitmap_rainy_cloud,
-	bitmap_snowy_cloud,
-};
-
-#define NUM_OF_BITMAPS sizeof(bitmaps) / sizeof(*bitmaps[0])
+#include "bitmaps/data/elements.h"
+#include "bitmaps/data/parameters.h"
