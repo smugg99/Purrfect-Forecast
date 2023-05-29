@@ -148,7 +148,7 @@ void goToSleep() {
 
 	// Idk why but this shit beeps when going to sleep...
 	digitalWrite(BUZZER_PIN, LOW);
-	displayGoingToSleepScreen();
+	//displayGoingToSleepScreen();
 
 	delay(FIXED_DELAY);
 

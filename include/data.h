@@ -46,6 +46,18 @@ struct FetchedData {
 	float feelsLikeTemperature;
 };
 
+enum DISPLAY_POINT {
+	CENTER,
+	TOP_LEFT,
+	TOP_RIGHT,
+	TOP_CENTER,
+	BOTTOM_LEFT,
+	BOTTOM_RIGHT,
+	BOTTOM_CENTER,
+	RIGHT_CENTER,
+	LEFT_CENTER
+};
+
 const int JSON_BUFFER_SIZE = 1024;
 const String PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -72,6 +84,11 @@ HTTPClient http;
 DHTesp dht;
 
 AsyncWebServer server(DEFAULT_PORT);
+
+GxEPD2_BW<GxEPD2_290_T94_V2, GxEPD2_290_T94_V2::HEIGHT> display(GxEPD2_290_T94_V2(CS_PIN, DC_PIN, RST_PIN, BUSY_PIN)); // GDEM029T94 128x296, SSD1680, Waveshare 2.9" V2 variant
+
+const u_int16_t DISPLAY_WIDTH = display.width();
+const u_int16_t DISPLAY_HEIGHT = display.height();
 
 //==============================================================
 //	Functions

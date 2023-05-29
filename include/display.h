@@ -1,22 +1,6 @@
 #include "fonts.h"
 #include "bitmaps.h"
-
-GxEPD2_BW<GxEPD2_290_T94_V2, GxEPD2_290_T94_V2::HEIGHT> display(GxEPD2_290_T94_V2(CS_PIN, DC_PIN, RST_PIN, BUSY_PIN)); // GDEM029T94 128x296, SSD1680, Waveshare 2.9" V2 variant
-
-const u_int16_t DISPLAY_WIDTH = display.width();
-const u_int16_t DISPLAY_HEIGHT = display.height();
-
-enum DISPLAY_POINT {
-	CENTER,
-	TOP_LEFT,
-	TOP_RIGHT,
-	TOP_CENTER,
-	BOTTOM_LEFT,
-	BOTTOM_RIGHT,
-	BOTTOM_CENTER,
-	RIGHT_CENTER,
-	LEFT_CENTER
-};
+#include "layout.h"
 
 //==============================================================
 //	Functions
@@ -121,6 +105,7 @@ void setDisplayDefaults() {
 	display.firstPage();
 }
 
+
 void displayAccessPointScreen(APCredentials apCredentials) {
 	if (DISABLE_DISPLAY) { return; }
 
@@ -182,65 +167,22 @@ void displayPrimaryScreen() {
 		// printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
 		// printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
 
-		display.drawBitmap(0, 0, bitmap_sun_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(24, 0, bitmap_moon_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(48, 0, bitmap_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(72, 0, bitmap_broken_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(96, 0, bitmap_rainy_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(120, 0, bitmap_snowy_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(144, 0, bitmap_stormy_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(168, 0, bitmap_mixed_cloud_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(192, 0, bitmap_battery_0_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(216, 0, bitmap_battery_1_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(240, 0, bitmap_battery_2_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(264, 0, bitmap_battery_3_24x24, 24, 24, GxEPD_BLACK);
-		
-		display.drawBitmap(0, 24, bitmap_battery_4_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(24, 24, bitmap_battery_5_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(48, 24, bitmap_battery_6_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(72, 24, bitmap_battery_7_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(96, 24, bitmap_coordinates_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(120, 24, bitmap_town_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(144, 24, bitmap_date_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(168, 24, bitmap_clock_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(192, 24, bitmap_internet_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(216, 24, bitmap_no_internet_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(240, 24, bitmap_no_wifi_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(264, 24, bitmap_wifi_0_24x24, 24, 24, GxEPD_BLACK);
-		
-		display.drawBitmap(0, 48, bitmap_wifi_1_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(24, 48, bitmap_wifi_2_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(48, 48, bitmap_wifi_3_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(72, 48, bitmap_wifi_4_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(96, 48, bitmap_sync_error_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(120, 48, bitmap_sync_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(144, 48, bitmap_sleep_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(168, 48, bitmap_snowflake_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(192, 48, bitmap_humidity_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(216, 48, bitmap_flame_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(240, 48, bitmap_visibility_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(264, 48, bitmap_ground_level_24x24, 24, 24, GxEPD_BLACK);
-		
-		display.drawBitmap(0, 72, bitmap_sea_level_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(24, 72, bitmap_pressure_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(48, 72, bitmap_thermometer_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(72, 72, bitmap_feels_like_temperature_24x24, 24, 24, GxEPD_BLACK);
-		display.drawBitmap(96, 72, bitmap_dew_point_24x24, 24, 24, GxEPD_BLACK);
 	} while (display.nextPage());
 
+	do
+	{
+		batteryIndicator.redraw();
+
+		for (size_t i = 0; i < batteryIndicator.getBitmapVariantsSize(); i++) {
+			delay(500);
+			batteryIndicator.changeBitmapVariant(i, false);
+		}
+	} while (true);
 
 	setDisplayDefaults();
 	display.hibernate();
 }
 
-void displayGoingToSleepScreen() {
-	do {
-		display.fillCircle(0, 0, 15, GxEPD_BLACK);
-	} while (display.nextPage());
-
-	setDisplayDefaults();
-	display.hibernate();
-}
 
 void setupDisplay() {
 	if (DISABLE_DISPLAY) { return; }
