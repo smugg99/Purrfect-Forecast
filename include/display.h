@@ -93,6 +93,7 @@ void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_PO
 
 void clearDisplay() {
 	display.fillScreen(GxEPD_WHITE);
+	display.clearScreen();
 }
 
 void setDisplayDefaults() {
@@ -112,8 +113,8 @@ void displayAccessPointScreen(APCredentials apCredentials) {
 	String qrCodeContent = qrEncodeAPCredentials(apCredentials);
 
 	do {
-		display.fillScreen(GxEPD_WHITE);
-
+		clearDisplay();
+		
 		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
 
@@ -132,8 +133,8 @@ void displayBootSplash() {
 	if (DISABLE_DISPLAY) { return; }
 
 	do {
-		display.fillScreen(GxEPD_WHITE);
-
+		clearDisplay();
+		
 		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText(SPLASH_SCREEN_TITLE, DISPLAY_POINT::TOP_CENTER);
 
@@ -154,7 +155,7 @@ void displayPrimaryScreen() {
 	if (DISABLE_DISPLAY) { return; }
 
 	do {
-		display.fillScreen(GxEPD_WHITE);
+		clearDisplay();
 		display.setFont(&Linerama_Regular8pt7b);
 
 		// printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);

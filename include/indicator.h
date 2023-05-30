@@ -13,22 +13,32 @@ public:
 		this->_height = height;
 	};
 
+	inline std::tuple<uint16_t, uint16_t, uint16_t, uint16_t> getPositionAndSize() {
+		return std::make_tuple(this->_x, this->_y, this->_width, this->_height);
+	}
+	
 	inline size_t getBitmapVariantsSize() {
 		return this->_bitmapVariantsSize;
 	}
 
-	void redraw(bool lazy = true) {
+	void move(uint16_t x, uint16_t y) {
+		redraw(false, true);
+		this->_x = x;
+		this->_y = y;
+	}
+	
+	void redraw(bool lazy = true, bool inverted = false) {
 		display.setPartialWindow(this->_x, this->_y, this->_width, this->_height);
 		display.firstPage();
 		do {
 			if (lazy) {
-				display.fillRect(this->_x, this->_y, this->_width, this->_height, GxEPD_WHITE);
+				display.fillRect(this->_x, this->_y, this->_width, this->_height, inverted ? GxEPD_BLACK : GxEPD_WHITE);
 			}
 			else {
-				display.drawBitmap(this->_x, this->_y, this->_bitmapVariants[this->_currentVariantIndex], this->_width, this->_height, GxEPD_WHITE);
+				display.drawBitmap(this->_x, this->_y, this->_bitmapVariants[this->_currentVariantIndex], this->_width, this->_height, inverted ? GxEPD_WHITE : GxEPD_BLACK);
 			}
 
-			display.drawBitmap(this->_x, this->_y, this->_bitmapVariants[this->_currentVariantIndex], this->_width, this->_height, GxEPD_BLACK);
+			display.drawBitmap(this->_x, this->_y, this->_bitmapVariants[this->_currentVariantIndex], this->_width, this->_height, inverted ? GxEPD_WHITE : GxEPD_BLACK);
 		} while (display.nextPage());
 	}
 

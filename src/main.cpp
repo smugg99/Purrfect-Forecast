@@ -1,3 +1,4 @@
+#include <tuple>
 #include <Arduino.h>
 
 #include <GxEPD2_BW.h>
@@ -92,7 +93,7 @@ bool connectToWiFi() {
 }
 
 bool checkInternetConnection() {
-	if (!Ping.ping(PING_DNS)) {
+	if (!Ping.ping(PING_DNS.c_str())) {
 		debugPrint("Internet connection not ok!");
 		return false;
 	}
@@ -242,11 +243,17 @@ bool _fetchCurrentWeather() {
 }
 
 void _quantifyData() {
+	int adcValue = analogRead(ADC_PIN);
+	int adcRange = ADC_MAX - ADC_MIN;
+	float normalizedValue = static_cast<float>(adcValue - ADC_MIN) / adcRange;
+	int batteryPercentage = static_cast<int>(normalizedValue * 100);
+	batteryPercentage = std::max(0, std::min(100, batteryPercentage));
+	
 	float _humidity = dht.getHumidity();
 	float _temperature = dht.getTemperature();
 	float _absoluteHumidity = dht.computeAbsoluteHumidity(_temperature, _humidity, false);
 	float _dewPoint = dht.computeDewPoint(_temperature, _humidity);
-
+	
 	debugPrint("Humidity: "); debugPrint(_humidity);
 	debugPrint("Temperature: "); debugPrint(_temperature);
 	debugPrint("Absoulute humidity: "); debugPrint(_absoluteHumidity);

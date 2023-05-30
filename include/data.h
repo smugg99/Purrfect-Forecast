@@ -36,6 +36,7 @@ struct GETResult {
 struct QuantifiedData {
 	float humidity;
 	float temperature;
+	float batteryPercentage;
 };
 
 // Fetched using software

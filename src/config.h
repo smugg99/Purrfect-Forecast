@@ -10,15 +10,15 @@
 //==============================================================
 
 // Insert api key here
-#define API_KEY _API_KEY
-#define API_ENDPOINT "http://api.openweathermap.org/data/2.5/"
+const String API_KEY = _API_KEY;
+const String API_ENDPOINT = "http://api.openweathermap.org/data/2.5/";
 
-#define API_CURRENT_WEATHER "weather"
-#define API_WEATHER_FORECAST "forecast"
-//#define API_AIR_POLLUTION "air_pollution"
+const String API_CURRENT_WEATHER = "weather";
+const String API_WEATHER_FORECAST = "forecast";
+const String API_AIR_POLLUTION = "air_pollution";
 
-#define API_METRIC_UNITS "metric"
-#define API_IMPERIAL_UNITS "imperial"
+const String API_METRIC_UNITS = "metric";
+const String API_IMPERIAL_UNITS = "imperial";
 
 //==============================================================
 //	API
@@ -28,56 +28,64 @@
 //	Defaults
 //==============================================================
 
-#define DEFAULT_WIFI_SSID "Funbox6-420D"
-#define DEFAULT_WIFI_PASSWORD "Wysowianka1"
+const String DEFAULT_WIFI_SSID = "Funbox6-420D";
+const String DEFAULT_WIFI_PASSWORD = "Wysowianka1";
 
-#define DEFAULT_PORT 80
-#define PING_DNS "8.8.8.8" // Le Google DNS server
+const uint16_t DEFAULT_PORT = 80;
+const String PING_DNS = "8.8.8.8"; // Le Google DNS server
 
-#define DEFAULT_LATITUTE 49.5693
-#define DEFAULT_LONGITUDE 20.8849
+const double DEFAULT_LATITUTE = 49.5693;
+const double DEFAULT_LONGITUDE = 20.8849;
 
-#define FORECAST_TIMESTAMPS_AMOUNT 3
-#define FORECAST_DAYS_AMOUNT 5
+const uint16_t FORECAST_TIMESTAMPS_AMOUNT = 3;
+const uint16_t FORECAST_DAYS_AMOUNT = 5;
 
-#define BAUD_RATE 115200
+const uint32_t BAUD_RATE = 115200;
 
-#define DEBUG true
-#define ALSO_USE_WEB_SERIAL true
+const bool DEBUG = true;
+const bool ALSO_USE_WEB_SERIAL = true;
 
-#define DISABLE_DISPLAY false
-#define DISABLE_SLEEP true
-#define DISABLE_BUZZER true
+const bool DISABLE_DISPLAY = false;
+const bool DISABLE_SLEEP = true;
+const bool DISABLE_BUZZER = true;
 
-#define FIXED_DELAY 500
+const uint16_t FIXED_DELAY = 500;
 
 // It's in MICRO seconds!
-#define SLEEP_DURATION 5000000
+const uint32_t SLEEP_DURATION = 5000000;
 
-#define AP_SSID_LENGTH 18
-#define AP_PASSWORD_LENGTH 8
+const uint8_t AP_SSID_LENGTH = 18;
+const uint8_t AP_PASSWORD_LENGTH = 8;
 
-#define CONNECTION_MAX_RETRIES 20
-#define CONNECTION_DELAY 1000
+const uint16_t CONNECTION_MAX_RETRIES = 20;
+const uint16_t CONNECTION_DELAY = 1000;
 
-#define MAX_BATTERY_VOLTAGE 4.2
-#define MIN_BATTERY_VOLTAGE 2.9
+// #define MAX_BATTERY_VOLTAGE 4.2
+// #define MIN_BATTERY_VOLTAGE 2.9
 
-#define SPLASH_SCREEN_TITLE "Purrfect Forecast"
-#define SPLASH_SCREEN_FOOTER "Made by Karol Duda"
+// Calibrate this...
+const uint32_t RESISTOR_1 = 100000;
+const uint32_t RESISTOR_2 = 200000;
 
-#define BOOT_SPLASH_DURATION 500
+// Used for normalizing the percentage, basically "offsets" the lower voltage
+const uint16_t ADC_MAX = 1023;
+const uint16_t ADC_MIN = 0;
 
-#define HARDWARE_VERSION "V1.0"
-#define SOFTWARE_VERSION "V0.1"
+const String SPLASH_SCREEN_TITLE = "Purrfect Forecast";
+const String SPLASH_SCREEN_FOOTER = "Made by Karol Duda";
 
-#define DISPLAY_ROTATION 3  // Rotate the display 180* because I am retarded and designed the case in the wrong way
+const uint16_t BOOT_SPLASH_DURATION = 500;
 
-#define SAFETY_MARGIN_X 2
-#define SAFETY_MARGIN_Y 2
+const String HARDWARE_VERSION = "V1.0";
+const String SOFTWARE_VERSION = "V0.1";
 
-#define FOOTER_OFFSET_X 0
-#define FOOTER_OFFSET_Y 15
+const uint8_t DISPLAY_ROTATION = 3;  // Rotate the display 180* because I am retarded and designed the case in the wrong way
+
+const uint16_t SAFETY_MARGIN_X = 2;
+const uint16_t SAFETY_MARGIN_Y = 2;
+
+const uint16_t FOOTER_OFFSET_X = 0;
+const uint16_t FOOTER_OFFSET_Y = 15;
 
 //==============================================================
 //	Defaults
@@ -87,15 +95,15 @@
 //	Pins
 //==============================================================
 
-#define RST_PIN 2
-#define DC_PIN 4
-#define CS_PIN 15
-#define BUSY_PIN 5
+const uint8_t RST_PIN = 2;
+const uint8_t DC_PIN = 4;
+const uint8_t CS_PIN = 15;
+const uint8_t BUSY_PIN = 5;
 
-#define DHT_DATA_PIN 0
-#define BUZZER_PIN 12
-#define BUTTON_PIN 3
-#define ADC_PIN A0
+const uint8_t DHT_DATA_PIN = 0;
+const uint8_t BUZZER_PIN = 12;
+const uint8_t BUTTON_PIN = 3;
+const uint8_t ADC_PIN = A0;
 
 //==============================================================
 //	Pins

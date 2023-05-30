@@ -99,7 +99,7 @@ String buildUrl(FetchDataType fetchDataType = FetchDataType::CURRENT_WEATHER) {
 	}
 
 	// Compilator throws an error without explicitly stating the api key is a string...
-	secondaryUrl.concat("&appid=" + String(API_KEY));
+	secondaryUrl.concat("&appid=" + API_KEY);
 	url.concat(secondaryUrl);
 
 	debugPrint("Url built: ");
