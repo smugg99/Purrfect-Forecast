@@ -246,8 +246,8 @@ void _quantifyData() {
 	int adcValue = analogRead(ADC_PIN);
 	int adcRange = ADC_MAX - ADC_MIN;
 	float normalizedValue = static_cast<float>(adcValue - ADC_MIN) / adcRange;
-	int batteryPercentage = static_cast<int>(normalizedValue * 100);
-	batteryPercentage = std::max(0, std::min(100, batteryPercentage));
+	int _batteryPercentage = static_cast<int>(normalizedValue * 100);
+	_batteryPercentage = std::max(0, std::min(100, _batteryPercentage));
 	
 	float _humidity = dht.getHumidity();
 	float _temperature = dht.getTemperature();
@@ -262,7 +262,8 @@ void _quantifyData() {
 	QuantifiedData newQuantifiedData;
 	newQuantifiedData.humidity = _humidity;
 	newQuantifiedData.temperature = _temperature;
-
+	newQuantifiedData.batteryPercentage = _batteryPercentage;
+	
 	quantifiedData = newQuantifiedData;
 }
 
@@ -302,7 +303,8 @@ void setup() {
 
 	setupUnits();
 	setupDisplay();
-
+	delay(FIXED_DELAY);
+	
 	displayBootSplash();
 	delay(BOOT_SPLASH_DURATION);
 

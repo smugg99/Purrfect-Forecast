@@ -22,12 +22,13 @@ public:
 	}
 
 	void move(uint16_t x, uint16_t y) {
-		redraw(false, true);
+		draw(false, true);
 		this->_x = x;
 		this->_y = y;
+		draw(false);
 	}
 	
-	void redraw(bool lazy = true, bool inverted = false) {
+	void draw(bool lazy = true, bool inverted = false) {
 		display.setPartialWindow(this->_x, this->_y, this->_width, this->_height);
 		display.firstPage();
 		do {
@@ -40,12 +41,14 @@ public:
 
 			display.drawBitmap(this->_x, this->_y, this->_bitmapVariants[this->_currentVariantIndex], this->_width, this->_height, inverted ? GxEPD_WHITE : GxEPD_BLACK);
 		} while (display.nextPage());
+
+		display.setFullWindow();
 	}
 
 	void changeBitmapVariant(size_t bitmapIndex = 0, bool skipRedraw = true) {
 		this->_currentVariantIndex = bitmapIndex;
 
 		if (skipRedraw) { return; }
-		redraw(false);
+		draw(false);
 	}
 };

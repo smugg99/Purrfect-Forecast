@@ -91,19 +91,11 @@ void printPointedText(const String text, DISPLAY_POINT displayPoint = DISPLAY_PO
 	display.println(text);
 }
 
-void clearDisplay() {
-	display.fillScreen(GxEPD_WHITE);
-	display.clearScreen();
-}
-
 void setDisplayDefaults() {
 	display.setTextWrap(false);
 	display.setFont(&Linerama_Regular12pt7b);
 	display.setTextColor(GxEPD_BLACK);
 	display.setTextSize(1);
-
-	display.setFullWindow();
-	display.firstPage();
 }
 
 
@@ -112,8 +104,10 @@ void displayAccessPointScreen(APCredentials apCredentials) {
 
 	String qrCodeContent = qrEncodeAPCredentials(apCredentials);
 
+	display.setFullWindow();
+	display.firstPage();
 	do {
-		clearDisplay();
+		display.fillScreen(GxEPD_WHITE);
 		
 		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText("No WiFi!", DISPLAY_POINT::TOP_CENTER);
@@ -126,14 +120,16 @@ void displayAccessPointScreen(APCredentials apCredentials) {
 	} while (display.nextPage());
 
 	setDisplayDefaults();
-	display.hibernate();
+	display.powerOff();
 }
 
 void displayBootSplash() {
 	if (DISABLE_DISPLAY) { return; }
 
+	display.setFullWindow();
+	display.firstPage();
 	do {
-		clearDisplay();
+		display.fillScreen(GxEPD_WHITE);
 		
 		display.setFont(&Linerama_Bold12pt7b);
 		printPointedText(SPLASH_SCREEN_TITLE, DISPLAY_POINT::TOP_CENTER);
@@ -148,40 +144,64 @@ void displayBootSplash() {
 	} while (display.nextPage());
 
 	setDisplayDefaults();
-	display.hibernate();
+	display.powerOff();
 }
 
 void displayPrimaryScreen() {
 	if (DISABLE_DISPLAY) { return; }
 
+	display.setFullWindow();
+	display.firstPage();
 	do {
-		clearDisplay();
+		display.fillScreen(GxEPD_WHITE);
 		display.setFont(&Linerama_Regular8pt7b);
 
-		// printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 3);
-		// printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y * 2);
-		// printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, FOOTER_OFFSET_X, -FOOTER_OFFSET_Y);
+		
+		printPointedText("Api access: " + toBool(stationStatus.apiAccess), DISPLAY_POINT::CENTER, 0, -FOOTER_OFFSET_Y * 3);
+		printPointedText("Internet access: " + toBool(stationStatus.internetAccess), DISPLAY_POINT::CENTER, 0, -FOOTER_OFFSET_Y * 2);
+		printPointedText("WiFi connected: " + toBool(stationStatus.wifiConnected), DISPLAY_POINT::CENTER, 0, -FOOTER_OFFSET_Y);
+		printPointedText("Battery %: " + removeTrailingZeros(String(quantifiedData.batteryPercentage)), DISPLAY_POINT::CENTER, 0, 0);
+		
+		printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
+		printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
 
-		// printPointedText(toHumidity(currentWeatherData.humidity), DISPLAY_POINT::TOP_LEFT);
-		// printPointedText(toTemperature(currentWeatherData.temperature), DISPLAY_POINT::TOP_RIGHT);
-
-		// printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
-		// printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
+		printPointedText(toHumidity(quantifiedData.humidity), DISPLAY_POINT::BOTTOM_LEFT);
+		printPointedText(toTemperature(quantifiedData.temperature), DISPLAY_POINT::BOTTOM_RIGHT);
 
 	} while (display.nextPage());
-
+	
 	do
 	{
-		batteryIndicator.redraw();
-
+		batteryIndicator.draw();
+		wifiIndicator.draw();
+		internetIndicator.draw();
+		apiIndicator.draw();
+		
 		for (size_t i = 0; i < batteryIndicator.getBitmapVariantsSize(); i++) {
-			delay(500);
+			delay(100);
 			batteryIndicator.changeBitmapVariant(i, false);
 		}
+
+		for (size_t i = 0; i < wifiIndicator.getBitmapVariantsSize(); i++) {
+			delay(100);
+			wifiIndicator.changeBitmapVariant(i, false);
+		}
+		
+		for (size_t i = 0; i < internetIndicator.getBitmapVariantsSize(); i++) {
+			delay(100);
+			internetIndicator.changeBitmapVariant(i, false);
+		}
+		
+		for (size_t i = 0; i < apiIndicator.getBitmapVariantsSize(); i++) {
+			delay(100);
+			apiIndicator.changeBitmapVariant(i, false);
+		}
+
+		batteryIndicator.move(0, 24);
 	} while (true);
 
 	setDisplayDefaults();
-	display.hibernate();
+	display.powerOff();
 }
 
 
@@ -192,9 +212,11 @@ void setupDisplay() {
 	display.setRotation(DISPLAY_ROTATION);
 
 	setDisplayDefaults();
-	clearDisplay();
-}
 
+	// This shit prevents ghosting
+	display.clearScreen();
+	display.refresh(false);
+}
 //==============================================================
 //	Functions
 //==============================================================
